@@ -1,0 +1,52 @@
+"use client";
+import { useState } from "react";
+import { signOut, useSession } from "next-auth/react";
+
+/**
+ * User profile dropdown menu with avatar and sign-out option
+ */
+export default function ProfileMenu() {
+  const [open, setOpen] = useState(false);
+  const { data: session } = useSession();
+  
+  return (
+    <div className="relative">
+      {/* Profile avatar button */}
+      <button
+        aria-label="Profile"
+        className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+        onClick={() => setOpen((o) => !o)}
+      >
+        {session?.user?.image ? (
+          <img
+            src={session.user.image}
+            alt="Profile"
+            width={32}
+            height={32}
+            className="rounded-full border border-gray-300 dark:border-gray-600 object-cover"
+            onError={(e) => {
+              // Fallback to default avatar on image load error
+              const target = e.target as HTMLImageElement;
+              if (target.src !== `${window.location.origin}/default-avatar.png`) {
+                target.src = "/default-avatar.png";
+              }
+            }}
+          />
+        ) : (
+          <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700 dark:text-gray-200"><circle cx="12" cy="7" r="4"/><path d="M5.5 21v-2a4.5 4.5 0 0 1 9 0v2"/></svg>
+        )}
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 flex flex-col gap-2 border border-gray-100 dark:border-gray-700 z-50">
+          <a href="/profile" className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-700 dark:text-gray-200">Profile</a>
+          <button
+            onClick={() => signOut({ callbackUrl: "/auth/signin" })}
+            className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition text-red-600 text-left"
+          >
+            Sign Out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
