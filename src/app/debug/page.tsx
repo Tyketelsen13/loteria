@@ -1,0 +1,50 @@
+"use client";
+
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+
+export default function SessionDebug() {
+  const { data: session, status } = useSession();
+  const [clientSession, setClientSession] = useState(null);
+
+  useEffect(() => {
+    // Test direct session fetch
+    fetch('/api/auth/session')
+      .then(res => res.json())
+      .then(data => {
+        console.log('Direct session fetch:', data);
+        setClientSession(data);
+      })
+      .catch(err => {
+        console.error('Session fetch error:', err);
+      });
+  }, []);
+
+  return (
+    <div className="p-8 max-w-2xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">Session Debug</h1>
+      
+      <div className="space-y-4">
+        <div className="bg-gray-100 p-4 rounded">
+          <h2 className="font-semibold">useSession() Status:</h2>
+          <p>Status: {status}</p>
+          <pre className="mt-2 text-sm overflow-auto">
+            {JSON.stringify(session, null, 2)}
+          </pre>
+        </div>
+
+        <div className="bg-gray-100 p-4 rounded">
+          <h2 className="font-semibold">Direct /api/auth/session fetch:</h2>
+          <pre className="mt-2 text-sm overflow-auto">
+            {JSON.stringify(clientSession, null, 2)}
+          </pre>
+        </div>
+
+        <div className="bg-gray-100 p-4 rounded">
+          <h2 className="font-semibold">Environment:</h2>
+          <p>NEXT_PUBLIC_API_URL: {process.env.NEXT_PUBLIC_API_URL}</p>
+        </div>
+      </div>
+    </div>
+  );
+}

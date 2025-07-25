@@ -26,8 +26,9 @@ function SignInForm() {
     console.log('[SignIn] Sign in response:', res);
     
     if (res?.ok) {
-      console.log('[SignIn] Sign in successful, redirecting...');
-      router.push("/");
+      console.log('[SignIn] Sign in successful, forcing page reload...');
+      // Force a full page reload to establish session properly
+      window.location.href = "/";
     } else {
       console.log('[SignIn] Sign in failed:', res?.error);
       setError(res?.error || "Invalid email or password");
