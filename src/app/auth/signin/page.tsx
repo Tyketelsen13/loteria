@@ -26,9 +26,9 @@ function SignInForm() {
     console.log('[SignIn] Sign in response:', res);
     
     if (res?.ok) {
-      console.log('[SignIn] Sign in successful, forcing page reload...');
-      // Force a full page reload to establish session properly
-      window.location.href = "/";
+      console.log('[SignIn] Sign in successful, redirecting to debug page...');
+      // Redirect to debug page to confirm session is working
+      window.location.href = "/debug";
     } else {
       console.log('[SignIn] Sign in failed:', res?.error);
       setError(res?.error || "Invalid email or password");
