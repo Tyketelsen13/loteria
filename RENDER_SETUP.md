@@ -11,7 +11,7 @@
 ```
 Name: loteria-backend
 Branch: main
-Build Command: cp next.config.backend.ts next.config.ts && cp backend-package.json package.json && npm ci --legacy-peer-deps && npm run build
+Build Command: cp next.config.backend.ts next.config.ts && cp backend-package.json package.json && npm install --legacy-peer-deps && npm run build
 Start Command: npm start
 ```
 
