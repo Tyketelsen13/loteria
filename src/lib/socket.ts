@@ -17,7 +17,7 @@ export function getSocket() {
     let baseUrl = "";
     if (isBrowser) {
       // Use backend URL for cross-origin deployment
-      baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || window.location.origin;
+      baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://loteria-backend-aoiq.onrender.com';
     } else {
       baseUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3001";
     }
