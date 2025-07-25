@@ -1,0 +1,55 @@
+import { NextRequest, NextResponse } from 'next/server';
+
+// Allowed origins for CORS
+const allowedOrigins = [
+  'https://loteria-frontend-282jftyxa-tyketelsen13s-projects.vercel.app',
+  'https://loteria-frontend-git-main-tyketelsen13s-projects.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:3001',
+];
+
+// Helper function to check if origin is allowed
+function isOriginAllowed(origin: string | null): boolean {
+  if (!origin) return false;
+  
+  // Allow any Vercel deployment domain for this project
+  if (origin.includes('tyketelsen13s-projects.vercel.app')) {
+    return true;
+  }
+  
+  // Allow specifically configured origins
+  return allowedOrigins.includes(origin);
+}
+
+export function middleware(req: NextRequest) {
+  const origin = req.headers.get('origin');
+  const response = NextResponse.next();
+
+  // Handle CORS for API routes
+  if (req.nextUrl.pathname.startsWith('/api/')) {
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+      if (origin && isOriginAllowed(origin)) {
+        response.headers.set('Access-Control-Allow-Origin', origin);
+      }
+      response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Cookie, next-auth.csrf-token, next-auth.callback-url, next-auth.session-token');
+      response.headers.set('Access-Control-Allow-Credentials', 'true');
+      response.headers.set('Access-Control-Max-Age', '86400');
+      return new Response(null, { status: 200, headers: response.headers });
+    }
+
+    // Handle actual requests
+    if (origin && isOriginAllowed(origin)) {
+      response.headers.set('Access-Control-Allow-Origin', origin);
+      response.headers.set('Access-Control-Allow-Credentials', 'true');
+      response.headers.set('Vary', 'Origin');
+    }
+  }
+
+  return response;
+}
+
+export const config = {
+  matcher: '/api/:path*',
+};
