@@ -24,13 +24,15 @@ Install Command: npm install --legacy-peer-deps
 Add these in Vercel dashboard:
 ```
 NEXT_PUBLIC_API_URL=https://your-render-backend-url.onrender.com
-NEXTAUTH_URL=https://your-vercel-app.vercel.app
+NEXTAUTH_URL=https://your-render-backend-url.onrender.com
 NEXTAUTH_SECRET=ketelsen00781008172000
 MONGODB_URI=mongodb+srv://learning:Learning123@learningfs.ixcqppu.mongodb.net/?retryWrites=true&w=majority&appName=LearningFS
 MONGODB_DB=loteria
 NODE_ENV=production
 SKIP_DB_VALIDATION=true
 ```
+
+**Important**: Use your **Render backend URL** for both `NEXT_PUBLIC_API_URL` and `NEXTAUTH_URL` so authentication goes directly to your backend!
 
 **Important**: Replace `your-render-backend-url` with your actual Render URL and `your-vercel-app` with your Vercel app name.
 

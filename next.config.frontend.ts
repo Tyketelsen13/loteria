@@ -50,10 +50,25 @@ const nextConfig: NextConfig = {
   // API routes will be proxied to backend
   async rewrites() {
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+    console.log('API Backend URL:', backendUrl) // Debug log
     return [
       {
         source: '/api/:path*',
         destination: `${backendUrl}/api/:path*`,
+      },
+    ]
+  },
+
+  // Headers for CORS
+  async headers() {
+    return [
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
+        ],
       },
     ]
   },
