@@ -18,45 +18,54 @@ if (!process.env.MONGODB_URI) {
 
 const uri = process.env.MONGODB_URI;
 
-// Vercel-optimized configuration (MINIMAL - WORKING STRATEGY)
+// Vercel-optimized configuration (ULTRA-MINIMAL FOR TIMEOUT FIX)
 const clientOptions: MongoClientOptions = {
   maxPoolSize: 1,
-  serverSelectionTimeoutMS: 15000, // Increased from 3000 based on working strategy
+  serverSelectionTimeoutMS: 5000, // Reduced from 15000 for Vercel timeout fix
+  connectTimeoutMS: 5000, // Added back for timeout control
+  socketTimeoutMS: 5000, // Added back for timeout control
 };
 
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
 async function createConnection(): Promise<MongoClient> {
-  const maxRetries = 2; // Reduced for Vercel timeout limits
-  let lastError: Error | null = null;
+  // Wrap entire connection process with timeout for Vercel
+  const connectionTimeout = 8000; // 8 seconds max for Vercel
+  
+  const connectionPromise = async (): Promise<MongoClient> => {
+    const maxRetries = 1; // Reduced to 1 retry for faster failure
+    let lastError: Error | null = null;
 
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      console.log(`MongoDB connection attempt ${i + 1}/${maxRetries} - Vercel optimized`);
-      
-      // Create fresh client instance
-      const mongoClient = new MongoClient(uri, clientOptions);
-      await mongoClient.connect();
-      
-      // Verify connection with short timeout
-      await mongoClient.db("admin").command({ ping: 1 });
-      console.log("MongoDB connection established successfully!");
-      
-      return mongoClient;
-    } catch (error) {
-      lastError = error as Error;
-      console.error(`Connection attempt ${i + 1} failed:`, error);
-      
-      if (i < maxRetries - 1) {
-        const delay = 1000; // Fixed 1s delay for Vercel
-        console.log(`Retrying in ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        console.log(`MongoDB connection attempt ${i + 1}/${maxRetries} - Ultra-fast`);
+        
+        // Create fresh client instance
+        const mongoClient = new MongoClient(uri, clientOptions);
+        await mongoClient.connect();
+        
+        // Skip ping to save time - connection test is enough
+        console.log("MongoDB connection established successfully!");
+        
+        return mongoClient;
+      } catch (error) {
+        lastError = error as Error;
+        console.error(`Connection attempt ${i + 1} failed:`, error);
+        
+        // No retry delay - fail fast for Vercel
       }
     }
-  }
+    
+    throw new Error(`MongoDB connection failed after ${maxRetries} attempts. Last error: ${lastError?.message}`);
+  };
   
-  throw new Error(`MongoDB connection failed after ${maxRetries} attempts. Last error: ${lastError?.message}`);
+  // Race against timeout
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => reject(new Error(`MongoDB connection timeout after ${connectionTimeout}ms`)), connectionTimeout);
+  });
+  
+  return Promise.race([connectionPromise(), timeoutPromise]);
 }
 
 // Environment-specific connection handling

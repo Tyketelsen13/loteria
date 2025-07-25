@@ -34,6 +34,9 @@ export async function GET() {
           
           <button class="test-button" onclick="testReconnect()">Try Reconnection Strategies</button>
           <div id="reconnect-result" class="result"></div>
+          
+          <button class="test-button" onclick="testFast()">Test Ultra-Fast Connection</button>
+          <div id="fast-result" class="result"></div>
         </div>
         
         <h2>Test 1: MongoDB Connection (Original)</h2>
@@ -112,6 +115,25 @@ POST /api/auth/signup</pre>
             result.innerHTML = '<div style="color: green;">✅ RECONNECTION SUCCESS</div><pre>' + JSON.stringify(data, null, 2) + '</pre>';
           } catch (error) {
             result.innerHTML = '<div style="color: red;">❌ RECONNECT ERROR: ' + error.message + '</div>';
+          }
+        }
+        
+        async function testFast() {
+          const result = document.getElementById('fast-result');
+          result.innerHTML = 'Testing ultra-fast connection (timeout fix)...';
+          
+          try {
+            const response = await fetch('/api/test-fast');
+            const data = await response.json();
+            
+            if (!response.ok) {
+              result.innerHTML = '<div style="color: red;">❌ FAST TEST FAILED</div><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+              return;
+            }
+            
+            result.innerHTML = '<div style="color: green;">⚡ ULTRA-FAST SUCCESS</div><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+          } catch (error) {
+            result.innerHTML = '<div style="color: red;">❌ FAST TEST ERROR: ' + error.message + '</div>';
           }
         }
         
