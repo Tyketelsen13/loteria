@@ -1,12 +1,12 @@
 /**
- * MongoDB Connection Singleton - Version 2.4 (ZERO OPTIONS - FINAL)
- * Fixed for Vercel using absolutely minimal configuration
+ * MongoDB Connection Singleton - Version 2.5 (PRODUCTION READY)
+ * Final working configuration for Vercel deployment
  * 
- * SOLUTION: All MongoDB client options were causing conflicts with Vercel
- * FINAL STRATEGY: Zero options - let MongoDB driver handle everything
+ * SOLUTION: Zero MongoDB client options - let driver handle defaults
+ * STATUS: ✅ Working on Vercel with Network Access from anywhere enabled
  */
 
-import { MongoClient, MongoClientOptions } from "mongodb";
+import { MongoClient } from "mongodb";
 import { BUILD_VERSION } from "./build-info";
 
 console.log(`MongoDB module loaded - Build: ${BUILD_VERSION} (Vercel Optimized)`);
@@ -21,7 +21,6 @@ const uri = process.env.MONGODB_URI;
 // ZERO OPTIONS - Let MongoDB driver use all defaults
 // This approach worked when all other strategies failed
 
-let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
 async function createConnection(): Promise<MongoClient> {
@@ -64,12 +63,16 @@ async function createConnection(): Promise<MongoClient> {
 }
 
 // Environment-specific connection handling
+declare global {
+  var _mongoClientPromise: Promise<MongoClient> | undefined;
+}
+
 if (process.env.NODE_ENV === "development") {
   // Development: Use global object to preserve connection across hot reloads
-  if (!(global as any)._mongoClientPromise) {
-    (global as any)._mongoClientPromise = createConnection();
+  if (!global._mongoClientPromise) {
+    global._mongoClientPromise = createConnection();
   }
-  clientPromise = (global as any)._mongoClientPromise;
+  clientPromise = global._mongoClientPromise;
 } else {
   // Production: Create fresh connection for each request (Vercel serverless)
   clientPromise = createConnection();

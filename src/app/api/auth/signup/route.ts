@@ -20,22 +20,23 @@ export async function POST(request: NextRequest) {
     console.log(`=== SIGNUP SUCCESS in ${Date.now() - startTime}ms ===`);
     return result;
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errorTime = Date.now() - startTime;
+    const err = error as Error;
     console.error(`=== SIGNUP ERROR after ${errorTime}ms ===`, {
-      message: error.message,
-      name: error.name,
-      code: error.code,
-      stack: error.stack?.substring(0, 500)
+      message: err.message,
+      name: err.name,
+      code: (err as any).code,
+      stack: err.stack?.substring(0, 500)
     });
     
     // Return simple JSON response for all errors
     return NextResponse.json({
-      error: error.message === 'TIMEOUT' ? 'Request timeout' : 'Signup failed',
-      details: error.message,
+      error: err.message === 'TIMEOUT' ? 'Request timeout' : 'Signup failed',
+      details: err.message,
       time: errorTime
     }, { 
-      status: error.message === 'TIMEOUT' ? 408 : 500,
+      status: err.message === 'TIMEOUT' ? 408 : 500,
       headers: {
         'Content-Type': 'application/json'
       }
@@ -84,8 +85,9 @@ async function handleSignupSimple(request: NextRequest, startTime: number) {
     client = await clientPromise;
     db = client.db(process.env.MONGODB_DB);
     users = db.collection('users');
-  } catch (e: any) {
-    throw new Error(`Database connection failed: ${e.message}`);
+  } catch (e: unknown) {
+    const err = e as Error;
+    throw new Error(`Database connection failed: ${err.message}`);
   }
   console.log(`Step 4a (connect) complete: ${Date.now() - startTime}ms`);
 
@@ -107,13 +109,14 @@ async function handleSignupSimple(request: NextRequest, startTime: number) {
       message: 'User created successfully'
     }, { status: 201 });
     
-  } catch (error: any) {
-    if (error.code === 11000) {
+  } catch (error: unknown) {
+    const err = error as Error;
+    if ((err as any).code === 11000) {
       // Duplicate email
       return NextResponse.json({ 
         error: 'Email already exists' 
       }, { status: 409 });
     }
-    throw new Error(`Database insert failed: ${error.message}`);
+    throw new Error(`Database insert failed: ${err.message}`);
   }
 }

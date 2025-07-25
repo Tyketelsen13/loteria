@@ -44,16 +44,17 @@ export async function POST(request: NextRequest) {
       time: Date.now() - startTime
     }, { status: 201 });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error;
     console.error(`=== SIMPLE SIGNUP ERROR after ${Date.now() - startTime}ms ===`, error);
     
-    if (error.code === 11000) {
+    if ((err as any).code === 11000) {
       return NextResponse.json({ error: 'Email exists' }, { status: 409 });
     }
     
     return NextResponse.json({
       error: 'Signup failed',
-      details: error.message,
+      details: err.message,
       time: Date.now() - startTime
     }, { status: 500 });
   }
