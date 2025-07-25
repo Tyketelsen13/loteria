@@ -1,13 +1,12 @@
 /**
- * MongoDB Connection Singleton - Version 2.1
- * Simplified connection for Docker/production environments
- * Completely rewritten to force cache invalidation
+ * MongoDB Connection Singleton - Version 2.2 (Vercel Optimized)
+ * Optimized for Vercel serverless environment
  */
 
 import { MongoClient, MongoClientOptions } from "mongodb";
 import { BUILD_VERSION } from "./build-info";
 
-console.log(`MongoDB module loaded - Build: ${BUILD_VERSION}`);
+console.log(`MongoDB module loaded - Build: ${BUILD_VERSION} (Vercel Optimized)`);
 
 // Environment validation
 if (!process.env.MONGODB_URI) {
@@ -16,30 +15,31 @@ if (!process.env.MONGODB_URI) {
 
 const uri = process.env.MONGODB_URI;
 
-// Minimal configuration - let MongoDB Atlas handle SSL automatically
+// Vercel-optimized configuration
 const clientOptions: MongoClientOptions = {
-  serverSelectionTimeoutMS: 10000,
-  socketTimeoutMS: 45000,
-  connectTimeoutMS: 15000,
-  maxPoolSize: 10
+  maxPoolSize: 1, // Limit connections for serverless
+  serverSelectionTimeoutMS: 5000, // 5 second timeout
+  socketTimeoutMS: 5000,
+  connectTimeoutMS: 5000,
+  family: 4, // Use IPv4, skip trying IPv6
 };
 
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
 async function createConnection(): Promise<MongoClient> {
-  const maxRetries = 3;
+  const maxRetries = 2; // Reduced for Vercel timeout limits
   let lastError: Error | null = null;
 
   for (let i = 0; i < maxRetries; i++) {
     try {
-      console.log(`MongoDB connection attempt ${i + 1}/${maxRetries} - v2.1 (CLEAN BUILD)`);
+      console.log(`MongoDB connection attempt ${i + 1}/${maxRetries} - Vercel optimized`);
       
       // Create fresh client instance
       const mongoClient = new MongoClient(uri, clientOptions);
       await mongoClient.connect();
       
-      // Verify connection
+      // Verify connection with short timeout
       await mongoClient.db("admin").command({ ping: 1 });
       console.log("MongoDB connection established successfully!");
       
@@ -49,7 +49,7 @@ async function createConnection(): Promise<MongoClient> {
       console.error(`Connection attempt ${i + 1} failed:`, error);
       
       if (i < maxRetries - 1) {
-        const delay = Math.pow(2, i) * 1000;
+        const delay = 1000; // Fixed 1s delay for Vercel
         console.log(`Retrying in ${delay}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
@@ -67,7 +67,7 @@ if (process.env.NODE_ENV === "development") {
   }
   clientPromise = (global as any)._mongoClientPromise;
 } else {
-  // Production: Create fresh connection for each deployment
+  // Production: Create fresh connection for each request (Vercel serverless)
   clientPromise = createConnection();
 }
 

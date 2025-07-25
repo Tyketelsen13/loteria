@@ -6,7 +6,10 @@
   "regions": ["iad1"],
   "functions": {
     "src/app/api/**/*.ts": {
-      "maxDuration": 30
+      "maxDuration": 10
+    },
+    "src/app/api/auth/**/*.ts": {
+      "maxDuration": 8
     }
   },
   "env": {
