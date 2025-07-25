@@ -14,11 +14,18 @@ function SignInForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    
+    // For split deployment, make sure we use the correct backend URL
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    
     const res = await signIn("credentials", {
       email,
       password,
       redirect: false,
+      // Add custom backend URL if needed
+      ...(backendUrl && { callbackUrl: `${backendUrl}/api/auth/callback/credentials` })
     });
+    
     if (res?.ok) {
       router.push("/");
     } else {
