@@ -1,5 +1,7 @@
 import type { NextConfig } from 'next'
 
+// API Routes Fix Applied - July 24, 2025
+// Removed output: 'standalone' to fix Vercel deployment
 const nextConfig: NextConfig = {
   // Enable Turbopack (recommended over Webpack in newer Next.js)
   turbopack: {

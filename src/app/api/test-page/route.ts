@@ -20,6 +20,13 @@ export async function GET() {
       <div class="container">
         <h1>🔧 Lotería MongoDB Tests for Vercel</h1>
         
+        <div style="background: #e8f4f8; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+          <h3>🔍 Current Environment Status</h3>
+          <p><strong>Environment:</strong> <span id="env-info">Loading...</span></p>
+          <p><strong>Base URL:</strong> <span id="base-url">Loading...</span></p>
+          <button class="test-button" onclick="checkEnv()">Check Environment</button>
+        </div>
+        
         <h2>Test 1: MongoDB Connection</h2>
         <button class="test-button" onclick="testMongo()">Test MongoDB Connection</button>
         <div id="mongo-result" class="result"></div>
@@ -40,16 +47,35 @@ POST /api/auth/signup</pre>
       </div>
       
       <script>
+        // Check environment info
+        function checkEnv() {
+          document.getElementById('env-info').textContent = location.hostname.includes('localhost') ? 'LOCAL DEVELOPMENT' : 'VERCEL PRODUCTION';
+          document.getElementById('base-url').textContent = location.origin;
+        }
+        
+        // Auto-check on load
+        window.onload = checkEnv;
+        
         async function testMongo() {
           const result = document.getElementById('mongo-result');
           result.innerHTML = 'Testing...';
           
           try {
             const response = await fetch('/api/test-vercel-mongo');
+            
+            // Show response details for debugging
+            const statusText = response.ok ? 'OK' : 'ERROR';
+            const status = response.status;
+            
+            if (!response.ok) {
+              result.innerHTML = '<div style="color: red;">HTTP ' + status + ': ' + statusText + '<br>Response: ' + await response.text() + '</div>';
+              return;
+            }
+            
             const data = await response.json();
-            result.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            result.innerHTML = '<div style="color: green;">✅ SUCCESS</div><pre>' + JSON.stringify(data, null, 2) + '</pre>';
           } catch (error) {
-            result.innerHTML = '<div style="color: red;">Error: ' + error.message + '</div>';
+            result.innerHTML = '<div style="color: red;">❌ NETWORK ERROR: ' + error.message + '</div>';
           }
         }
         
@@ -67,10 +93,20 @@ POST /api/auth/signup</pre>
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ name, email, password })
             });
+            
+            // Show response details for debugging
+            const statusText = response.ok ? 'OK' : 'ERROR';
+            const status = response.status;
+            
+            if (!response.ok) {
+              result.innerHTML = '<div style="color: red;">HTTP ' + status + ': ' + statusText + '<br>Response: ' + await response.text() + '</div>';
+              return;
+            }
+            
             const data = await response.json();
-            result.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            result.innerHTML = '<div style="color: green;">✅ SUCCESS</div><pre>' + JSON.stringify(data, null, 2) + '</pre>';
           } catch (error) {
-            result.innerHTML = '<div style="color: red;">Error: ' + error.message + '</div>';
+            result.innerHTML = '<div style="color: red;">❌ NETWORK ERROR: ' + error.message + '</div>';
           }
         }
       </script>
