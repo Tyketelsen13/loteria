@@ -503,7 +503,7 @@ export default function AIGamePage() {
                 <div className="absolute left-0 right-0 bottom-0 flex justify-center z-20 transition-all duration-300">
                   <div className="w-[50vw] max-w-[340px] min-w-[180px] aspect-[11/16] flex items-center justify-center">
                     {/* Called card is now responsive: half the viewport width, but never larger than 340px or smaller than 180px, and keeps card aspect ratio */}
-                    <LoteriaCard name={calledCards[calledCards.length - 1]} variant="plain" className="w-full h-full" />
+                    <LoteriaCard key={`${calledCards[calledCards.length - 1]}-${deckTheme}`} name={calledCards[calledCards.length - 1]} variant="plain" className="w-full h-full" />
                   </div>
                 </div>
               ) : (

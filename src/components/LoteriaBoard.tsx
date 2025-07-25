@@ -16,7 +16,7 @@ interface LoteriaBoardProps {
  * 4x4 Lotería game board with customizable themes and interactive cards
  */
 export default function LoteriaBoard({ board, marks = [], onMark, markable }: LoteriaBoardProps) {
-  const { boardBackground, boardTheme } = useSettings();
+  const { boardBackground, boardTheme, deckTheme } = useSettings();
   const backgroundClass = getBoardBackgroundClass(boardBackground);
   const themeClass = getBoardThemeClass(boardTheme);
   
@@ -25,7 +25,7 @@ export default function LoteriaBoard({ board, marks = [], onMark, markable }: Lo
       {board.map((row, i) =>
         row.map((cell, j) => (
           <LoteriaCard
-            key={cell + i + j}
+            key={`${cell}-${i}-${j}-${deckTheme}`}
             name={cell}
             marked={!!marks?.[i]?.[j]}
             onClick={onMark ? () => onMark(i, j) : undefined}

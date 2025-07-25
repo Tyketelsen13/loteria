@@ -749,7 +749,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                     <div className="absolute left-0 right-0 bottom-0 flex justify-center z-20 transition-all duration-300">
                       <div className="w-[50vw] max-w-[340px] min-w-[180px] aspect-[11/16] flex items-center justify-center">
                         {/* Show the most recently called card (face up) */}
-                        <LoteriaCard name={toImageName(calledCards[calledCards.length - 1])} variant="plain" className="w-full h-full" />
+                        <LoteriaCard key={`${calledCards[calledCards.length - 1]}-${deckTheme}`} name={toImageName(calledCards[calledCards.length - 1])} variant="plain" className="w-full h-full" />
                       </div>
                     </div>
                   ) : (
