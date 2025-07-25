@@ -1,15 +1,9 @@
 {
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev:webpack",
-  "installCommand": "npm install",
   "framework": "nextjs",
   "regions": ["iad1"],
   "functions": {
     "src/app/api/**/*.ts": {
       "maxDuration": 10
-    },
-    "src/app/api/auth/**/*.ts": {
-      "maxDuration": 6
     }
   },
   "env": {
