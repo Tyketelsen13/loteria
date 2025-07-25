@@ -23,6 +23,18 @@ RUN npm ci --legacy-peer-deps
 
 # Rebuild the source code only when needed
 FROM base AS builder
+# Install Canvas dependencies in builder stage too
+RUN apk add --no-cache \
+    libc6-compat \
+    cairo-dev \
+    jpeg-dev \
+    pango-dev \
+    giflib-dev \
+    librsvg-dev \
+    pixman-dev \
+    pkgconfig \
+    make \
+    g++
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -34,6 +46,15 @@ RUN npm run build
 
 # Production image, copy all the files and run next
 FROM base AS runner
+# Install Canvas dependencies in runtime stage too
+RUN apk add --no-cache \
+    libc6-compat \
+    cairo \
+    jpeg \
+    pango \
+    giflib \
+    librsvg \
+    pixman
 WORKDIR /app
 
 ENV NODE_ENV production
@@ -48,9 +69,10 @@ COPY --from=builder /app/public ./public
 RUN mkdir .next
 RUN chown nextjs:nodejs .next
 
-# Automatically leverage output traces to reduce image size
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Copy the built application
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 
 USER nextjs
 
@@ -59,4 +81,4 @@ EXPOSE 3000
 ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
-CMD ["node", "server.js"]
+CMD ["npm", "start"]

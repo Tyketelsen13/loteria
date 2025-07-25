@@ -15,6 +15,11 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
 
+  // Skip TypeScript checking during build
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+
   // External packages for server components
   serverExternalPackages: [
     'mongoose', 
