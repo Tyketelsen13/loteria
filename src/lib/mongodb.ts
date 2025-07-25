@@ -15,7 +15,7 @@ if (!process.env.MONGODB_URI) {
 
 const uri = process.env.MONGODB_URI;
 
-// Vercel-optimized configuration (ultra-fast)
+// Vercel-optimized configuration with SSL fixes
 const clientOptions: MongoClientOptions = {
   maxPoolSize: 1, // Limit connections for serverless
   serverSelectionTimeoutMS: 3000, // 3 second timeout (reduced)
@@ -23,6 +23,14 @@ const clientOptions: MongoClientOptions = {
   connectTimeoutMS: 3000, // 3 second timeout (reduced)
   family: 4, // Use IPv4, skip trying IPv6
   maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
+  
+  // SSL/TLS Configuration for Vercel
+  tls: true,
+  tlsAllowInvalidCertificates: false,
+  tlsAllowInvalidHostnames: false,
+  authSource: 'admin',
+  retryWrites: true,
+  w: 'majority',
 };
 
 let client: MongoClient;

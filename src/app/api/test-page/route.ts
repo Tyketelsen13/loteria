@@ -27,11 +27,23 @@ export async function GET() {
           <button class="test-button" onclick="checkEnv()">Check Environment</button>
         </div>
         
-        <h2>Test 1: MongoDB Connection</h2>
-        <button class="test-button" onclick="testMongo()">Test MongoDB Connection</button>
+        <h2>Test 1: MongoDB Connection (Original)</h2>
+        <button class="test-button" onclick="testMongo()">Test Original MongoDB</button>
         <div id="mongo-result" class="result"></div>
         
-        <h2>Test 2: Simple Signup</h2>
+        <h2>Test 2: SSL-Fixed MongoDB Connection</h2>
+        <button class="test-button" onclick="testSSLMongo()">Test SSL-Fixed MongoDB</button>
+        <div id="ssl-result" class="result"></div>
+        
+        <h2>Test 3: Alternative MongoDB Connection</h2>
+        <button class="test-button" onclick="testAltMongo()">Test Alternative MongoDB</button>
+        <div id="alt-result" class="result"></div>
+        
+        <h2>Test 4: TLS-Fixed MongoDB Connection</h2>
+        <button class="test-button" onclick="testTLSMongo()">Test TLS-Fixed MongoDB</button>
+        <div id="tls-result" class="result"></div>
+        
+        <h2>Test 5: Simple Signup</h2>
         <div>
           <input type="text" id="name" placeholder="Name" value="Test User">
           <input type="email" id="email" placeholder="Email" value="test@example.com">
@@ -76,6 +88,72 @@ POST /api/auth/signup</pre>
             result.innerHTML = '<div style="color: green;">✅ SUCCESS</div><pre>' + JSON.stringify(data, null, 2) + '</pre>';
           } catch (error) {
             result.innerHTML = '<div style="color: red;">❌ NETWORK ERROR: ' + error.message + '</div>';
+          }
+        }
+        
+        async function testSSLMongo() {
+          const result = document.getElementById('ssl-result');
+          result.innerHTML = 'Testing SSL-fixed connection...';
+          
+          try {
+            const response = await fetch('/api/test-ssl-mongo');
+            
+            const statusText = response.ok ? 'OK' : 'ERROR';
+            const status = response.status;
+            
+            if (!response.ok) {
+              result.innerHTML = '<div style="color: red;">HTTP ' + status + ': ' + statusText + '<br>Response: ' + await response.text() + '</div>';
+              return;
+            }
+            
+            const data = await response.json();
+            result.innerHTML = '<div style="color: green;">✅ SSL SUCCESS</div><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+          } catch (error) {
+            result.innerHTML = '<div style="color: red;">❌ SSL NETWORK ERROR: ' + error.message + '</div>';
+          }
+        }
+        
+        async function testAltMongo() {
+          const result = document.getElementById('alt-result');
+          result.innerHTML = 'Testing alternative connection strategies...';
+          
+          try {
+            const response = await fetch('/api/test-alt-mongo');
+            
+            const statusText = response.ok ? 'OK' : 'ERROR';
+            const status = response.status;
+            
+            if (!response.ok) {
+              result.innerHTML = '<div style="color: red;">HTTP ' + status + ': ' + statusText + '<br>Response: ' + await response.text() + '</div>';
+              return;
+            }
+            
+            const data = await response.json();
+            result.innerHTML = '<div style="color: green;">✅ ALTERNATIVE SUCCESS</div><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+          } catch (error) {
+            result.innerHTML = '<div style="color: red;">❌ ALTERNATIVE NETWORK ERROR: ' + error.message + '</div>';
+          }
+        }
+        
+        async function testTLSMongo() {
+          const result = document.getElementById('tls-result');
+          result.innerHTML = 'Testing TLS-fixed connection (SSL alert fix)...';
+          
+          try {
+            const response = await fetch('/api/test-tls-mongo');
+            
+            const statusText = response.ok ? 'OK' : 'ERROR';
+            const status = response.status;
+            
+            if (!response.ok) {
+              result.innerHTML = '<div style="color: red;">HTTP ' + status + ': ' + statusText + '<br>Response: ' + await response.text() + '</div>';
+              return;
+            }
+            
+            const data = await response.json();
+            result.innerHTML = '<div style="color: green;">✅ TLS SUCCESS</div><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+          } catch (error) {
+            result.innerHTML = '<div style="color: red;">❌ TLS NETWORK ERROR: ' + error.message + '</div>';
           }
         }
         
