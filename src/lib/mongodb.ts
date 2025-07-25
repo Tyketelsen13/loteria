@@ -1,26 +1,18 @@
 /**
  * MongoDB Connection Singleton
  * Provides efficient connection reuse and prevents connection pool exhaustion during development
+ * Updated: Simplified SSL configuration for Docker/production environments
  */
 
 import { MongoClient, MongoClientOptions } from "mongodb";
 
 const uri = process.env.MONGODB_URI!;
 const options: MongoClientOptions = {
-  // Try different SSL/TLS configuration for Docker environments
-  tls: true,
-  tlsInsecure: true, // Allow invalid certificates for Atlas compatibility
-  tlsAllowInvalidHostnames: true, // Allow hostname mismatches
-  // Connection pool settings
-  maxPoolSize: 10,
-  serverSelectionTimeoutMS: 10000, // Increased timeout
+  // Use minimal options - let MongoDB Atlas connection string handle SSL
+  serverSelectionTimeoutMS: 10000,
   socketTimeoutMS: 45000,
-  connectTimeoutMS: 15000, // Increased timeout
-  // Retry settings
-  retryWrites: true,
-  // Additional Atlas-specific options
-  authSource: 'admin',
-  ssl: true // Legacy SSL option for compatibility
+  connectTimeoutMS: 15000,
+  maxPoolSize: 10
 };
 
 // Connection variables
@@ -38,20 +30,11 @@ async function connectWithRetry(): Promise<MongoClient> {
 
   for (let i = 0; i < maxRetries; i++) {
     try {
-      console.log(`MongoDB connection attempt ${i + 1}/${maxRetries}`);
+      console.log(`MongoDB connection attempt ${i + 1}/${maxRetries} - v2.0`);
+      console.log(`Using original MongoDB URI without modifications`);
       
-      // Try different connection approaches
-      let connectionUri = uri;
-      
-      // For Docker environments, ensure SSL parameters are in the connection string
-      if (!connectionUri.includes('ssl=') && !connectionUri.includes('tls=')) {
-        const separator = connectionUri.includes('?') ? '&' : '?';
-        connectionUri += `${separator}ssl=true&tlsInsecure=true&retryWrites=true&authSource=admin`;
-      }
-      
-      console.log(`Connecting to MongoDB with URI: ${connectionUri.substring(0, 50)}...`);
-      
-      const client = new MongoClient(connectionUri, options);
+      // Use the original URI without any modifications
+      const client = new MongoClient(uri, options);
       await client.connect();
       
       // Test the connection

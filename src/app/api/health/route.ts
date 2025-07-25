@@ -3,7 +3,7 @@ import clientPromise from "@/lib/mongodb";
 
 export async function GET() {
   try {
-    console.log("Health check: Testing MongoDB connection...");
+    console.log("Health check v2.0: Testing MongoDB connection...");
     
     // Test MongoDB connection
     const client = await clientPromise;

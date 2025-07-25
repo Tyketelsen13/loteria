@@ -4,45 +4,52 @@ import { MongoClient } from "mongodb";
 export async function GET() {
   const testResults = [];
   
-  // Test 1: Relaxed SSL settings (recommended for Docker)
+  // Test 1: Original MongoDB URI with minimal options
   try {
-    console.log("Test 1: Connecting with relaxed SSL (Docker-friendly)...");
+    console.log("Test 1: Using original MongoDB URI with minimal options...");
     const client1 = new MongoClient(process.env.MONGODB_URI!, {
-      tls: true,
-      tlsInsecure: true,
-      tlsAllowInvalidHostnames: true,
       serverSelectionTimeoutMS: 10000,
-      authSource: 'admin'
+      maxPoolSize: 10
     });
     await client1.connect();
     await client1.db("admin").command({ ping: 1 });
     await client1.close();
-    testResults.push({ method: "Relaxed SSL (Docker)", status: "SUCCESS" });
+    testResults.push({ method: "Original URI + Minimal Options", status: "SUCCESS" });
   } catch (error) {
     testResults.push({ 
-      method: "Relaxed SSL (Docker)", 
+      method: "Original URI + Minimal Options", 
       status: "FAILED", 
       error: error instanceof Error ? error.message.substring(0, 100) : String(error)
     });
   }
 
-  // Test 2: SSL in connection string
+  // Test 2: Completely empty options
   try {
-    console.log("Test 2: SSL parameters in connection string...");
-    let connectionUri = process.env.MONGODB_URI!;
-    if (!connectionUri.includes('ssl=')) {
-      const separator = connectionUri.includes('?') ? '&' : '?';
-      connectionUri += `${separator}ssl=true&tlsInsecure=true&retryWrites=true&authSource=admin`;
-    }
-    
-    const client2 = new MongoClient(connectionUri, { serverSelectionTimeoutMS: 10000 });
+    console.log("Test 2: Using original MongoDB URI with no options...");
+    const client2 = new MongoClient(process.env.MONGODB_URI!, {});
     await client2.connect();
     await client2.db("admin").command({ ping: 1 });
     await client2.close();
-    testResults.push({ method: "SSL in Connection String", status: "SUCCESS" });
+    testResults.push({ method: "Original URI + No Options", status: "SUCCESS" });
   } catch (error) {
     testResults.push({ 
-      method: "SSL in Connection String", 
+      method: "Original URI + No Options", 
+      status: "FAILED", 
+      error: error instanceof Error ? error.message.substring(0, 100) : String(error)
+    });
+  }
+
+  // Test 3: Default MongoClient (just URI)
+  try {
+    console.log("Test 3: Default MongoClient configuration...");
+    const client3 = new MongoClient(process.env.MONGODB_URI!);
+    await client3.connect();
+    await client3.db("admin").command({ ping: 1 });
+    await client3.close();
+    testResults.push({ method: "Default MongoClient", status: "SUCCESS" });
+  } catch (error) {
+    testResults.push({ 
+      method: "Default MongoClient", 
       status: "FAILED", 
       error: error instanceof Error ? error.message.substring(0, 100) : String(error)
     });
@@ -53,8 +60,13 @@ export async function GET() {
     environment: process.env.NODE_ENV,
     tests: testResults,
     working_method: testResults.find(t => t.status === "SUCCESS")?.method || "None found",
+    mongodb_uri_analysis: {
+      has_retry_writes: process.env.MONGODB_URI?.includes('retryWrites=true'),
+      has_w_majority: process.env.MONGODB_URI?.includes('w=majority'),
+      app_name: process.env.MONGODB_URI?.includes('appName=LearningFS')
+    },
     recommendation: testResults.find(t => t.status === "SUCCESS") ? 
       "Use the working method in your main connection" : 
-      "Check MongoDB Atlas network access settings"
+      "Check MongoDB Atlas network access and firewall settings"
   });
 }
