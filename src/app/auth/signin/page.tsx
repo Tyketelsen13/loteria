@@ -2,38 +2,55 @@
 import { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useJWTAuth } from "../../../context/JWTAuthContext";
 import Link from "next/link";
 
 function SignInForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { login: jwtLogin } = useJWTAuth();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setLoading(true);
     
     console.log('[SignIn] Attempting sign in with:', email);
     
+    // Try JWT authentication first
+    try {
+      const jwtSuccess = await jwtLogin(email, password);
+      if (jwtSuccess) {
+        console.log('[SignIn] JWT authentication successful');
+        router.push('/');
+        return;
+      }
+    } catch (jwtError) {
+      console.log('[SignIn] JWT authentication failed, trying NextAuth:', jwtError);
+    }
+    
+    // Fallback to NextAuth if JWT fails
     const res = await signIn("credentials", {
       email,
       password,
       redirect: false,
     });
     
-    console.log('[SignIn] Sign in response:', res);
+    console.log('[SignIn] NextAuth response:', res);
     
     if (res?.ok) {
-      console.log('[SignIn] Sign in successful, authentication working!');
-      // Authentication is working, show success message instead of redirecting
-      setError(""); // Clear any previous errors
-      alert('🎉 SUCCESS!\n\nAuthentication is working perfectly!\n\nYour Lotería app is successfully deployed with:\n✅ Backend on Render\n✅ Frontend on Vercel\n✅ Database connected\n✅ Authentication functional\n\nThe only remaining step is resolving cross-domain session cookies.\nSee DEPLOYMENT_STATUS.md for solutions.');
+      console.log('[SignIn] NextAuth successful');
+      router.push('/');
     } else {
-      console.log('[SignIn] Sign in failed:', res?.error);
-      setError(res?.error || "Invalid email or password");
+      console.log('[SignIn] Both authentication methods failed');
+      setError("Invalid email or password");
     }
+    
+    setLoading(false);
   }
 
   return (
@@ -45,6 +62,9 @@ function SignInForm() {
         <h3 className="text-lg font-semibold text-center text-[#3b2c1a] mb-4">
           Sign in to play Lotería
         </h3>
+        <div className="text-sm text-center text-[#8c2f2b] mb-4 bg-[#fff8e1] border border-[#b89c3a] rounded-lg p-2">
+          <strong>Test Account:</strong> test@example.com / password123
+        </div>
         {searchParams?.get("signup") === "success" && (
           <div className="text-green-600 mb-2 text-center bg-green-100 border border-green-400 rounded-lg p-2">
             Account created! Please sign in.
@@ -78,9 +98,10 @@ function SignInForm() {
         )}
         <button 
           type="submit" 
-          className="w-full bg-gradient-to-b from-[#e1b866] to-[#b89c3a] text-[#8c2f2b] font-western font-semibold py-3 rounded-xl border-2 border-[#8c2f2b] shadow-lg hover:from-[#ffe7a0] hover:to-[#e1b866] hover:text-[#6a1a1a] transition-all duration-150 text-lg tracking-wide"
+          disabled={loading}
+          className="w-full bg-gradient-to-b from-[#e1b866] to-[#b89c3a] text-[#8c2f2b] font-western font-semibold py-3 rounded-xl border-2 border-[#8c2f2b] shadow-lg hover:from-[#ffe7a0] hover:to-[#e1b866] hover:text-[#6a1a1a] transition-all duration-150 text-lg tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Sign In
+          {loading ? 'Signing In...' : 'Sign In'}
         </button>
       </form>
       {/* Moved the sign up link outside the form to prevent form submission issues */}

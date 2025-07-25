@@ -47,7 +47,7 @@ export default function Home() {
   useEffect(() => {
     if (authLoading) return;
     if (!isAuthenticated) {
-      router.push("/jwt-signin");
+      router.push("/auth/signin");
       return;
     }
   }, [isAuthenticated, authLoading, router]);

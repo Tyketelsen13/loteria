@@ -23,7 +23,7 @@ export default function ProfileMenu() {
     } else if (jwtUser) {
       // JWT logout
       jwtLogout();
-      router.push("/jwt-signin");
+      router.push("/auth/signin");
     }
   };
   
