@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useJWTAuth } from '../../context/JWTAuthContext';
+import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 
 // Dynamic import to prevent server-side rendering
@@ -15,6 +16,7 @@ function JWTSigninInner() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useJWTAuth();
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,8 +26,8 @@ function JWTSigninInner() {
     const success = await login(email, password);
     
     if (success) {
-      alert('🎉 JWT Login Successful!\n\nYou are now authenticated with JWT tokens!\nThis works perfectly for cross-domain authentication.');
-      // Could redirect to home page here
+      // Redirect to dashboard instead of showing popup
+      router.push('/');
     } else {
       setError('Invalid email or password');
     }
