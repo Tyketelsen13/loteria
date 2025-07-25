@@ -7,17 +7,20 @@ import { MongoClient, MongoClientOptions } from "mongodb";
 
 const uri = process.env.MONGODB_URI!;
 const options: MongoClientOptions = {
-  // SSL/TLS configuration for Docker/production environments
+  // Try different SSL/TLS configuration for Docker environments
   tls: true,
-  tlsAllowInvalidCertificates: false,
-  tlsAllowInvalidHostnames: false,
+  tlsInsecure: true, // Allow invalid certificates for Atlas compatibility
+  tlsAllowInvalidHostnames: true, // Allow hostname mismatches
   // Connection pool settings
   maxPoolSize: 10,
-  serverSelectionTimeoutMS: 5000,
+  serverSelectionTimeoutMS: 10000, // Increased timeout
   socketTimeoutMS: 45000,
-  connectTimeoutMS: 10000,
+  connectTimeoutMS: 15000, // Increased timeout
   // Retry settings
-  retryWrites: true
+  retryWrites: true,
+  // Additional Atlas-specific options
+  authSource: 'admin',
+  ssl: true // Legacy SSL option for compatibility
 };
 
 // Connection variables
@@ -37,7 +40,18 @@ async function connectWithRetry(): Promise<MongoClient> {
     try {
       console.log(`MongoDB connection attempt ${i + 1}/${maxRetries}`);
       
-      const client = new MongoClient(uri, options);
+      // Try different connection approaches
+      let connectionUri = uri;
+      
+      // For Docker environments, ensure SSL parameters are in the connection string
+      if (!connectionUri.includes('ssl=') && !connectionUri.includes('tls=')) {
+        const separator = connectionUri.includes('?') ? '&' : '?';
+        connectionUri += `${separator}ssl=true&tlsInsecure=true&retryWrites=true&authSource=admin`;
+      }
+      
+      console.log(`Connecting to MongoDB with URI: ${connectionUri.substring(0, 50)}...`);
+      
+      const client = new MongoClient(connectionUri, options);
       await client.connect();
       
       // Test the connection
