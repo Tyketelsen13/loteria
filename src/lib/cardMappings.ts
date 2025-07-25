@@ -159,7 +159,8 @@ export function getCardImageForDeck(cardName: string, deckThemeId: string): stri
         
       case 'traditional':
       default:
-        return `${baseUrl}/cards/${standardFilename}`;
+        // Traditional cards stay local - not uploaded to Cloudinary
+        return `/cards/${standardFilename}.png`;
     }
   }
   
