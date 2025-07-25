@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
 import bcrypt from "bcrypt";
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   const { token, password } = await req.json();
   if (!token || !password) return NextResponse.json({ error: "Missing fields" }, { status: 400 });

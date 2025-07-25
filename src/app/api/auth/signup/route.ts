@@ -2,121 +2,28 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 import clientPromise from "@/lib/mongodb";
 
-// Ultra-simple Vercel signup endpoint with comprehensive error handling
-export async function POST(request: NextRequest) {
-  const startTime = Date.now();
-  
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
+
+// Signup endpoint: creates a new user in MongoDB for NextAuth credentials provider
+export async function POST(req: NextRequest) {
   try {
-    console.log("=== SIGNUP START ===");
-    
-    // Parse request with timeout
-    const timeoutPromise = new Promise<never>((_, reject) => 
-      setTimeout(() => reject(new Error('TIMEOUT')), 4000)
-    );
-
-    const signupPromise = handleSignupSimple(request, startTime);
-    const result = await Promise.race([signupPromise, timeoutPromise]);
-    
-    console.log(`=== SIGNUP SUCCESS in ${Date.now() - startTime}ms ===`);
-    return result;
-    
-  } catch (error: unknown) {
-    const errorTime = Date.now() - startTime;
-    const err = error as Error;
-    console.error(`=== SIGNUP ERROR after ${errorTime}ms ===`, {
-      message: err.message,
-      name: err.name,
-      code: (err as any).code,
-      stack: err.stack?.substring(0, 500)
-    });
-    
-    // Return simple JSON response for all errors
-    return NextResponse.json({
-      error: err.message === 'TIMEOUT' ? 'Request timeout' : 'Signup failed',
-      details: err.message,
-      time: errorTime
-    }, { 
-      status: err.message === 'TIMEOUT' ? 408 : 500,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-}
-
-async function handleSignupSimple(request: NextRequest, startTime: number) {
-  // Step 1: Parse JSON
-  console.log("Step 1: Parsing request...");
-  let body;
-  try {
-    body = await request.json();
-  } catch (e) {
-    throw new Error('Invalid JSON in request');
-  }
-  
-  const { name, email, password } = body;
-  console.log(`Step 1 complete: ${Date.now() - startTime}ms`);
-
-  // Step 2: Validate input
-  console.log("Step 2: Validating input...");
-  if (!name || !email || !password) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-  }
-  
-  if (password.length < 6) {
-    return NextResponse.json({ error: 'Password too short' }, { status: 400 });
-  }
-  console.log(`Step 2 complete: ${Date.now() - startTime}ms`);
-
-  // Step 3: Hash password (fast)
-  console.log("Step 3: Hashing password...");
-  let hashedPassword;
-  try {
-    hashedPassword = await bcrypt.hash(password, 6); // Very fast hashing
-  } catch (e) {
-    throw new Error('Password hashing failed');
-  }
-  console.log(`Step 3 complete: ${Date.now() - startTime}ms`);
-
-  // Step 4: Database operation
-  console.log("Step 4: Database operation...");
-  let client, db, users;
-  try {
-    client = await clientPromise;
-    db = client.db(process.env.MONGODB_DB);
-    users = db.collection('users');
-  } catch (e: unknown) {
-    const err = e as Error;
-    throw new Error(`Database connection failed: ${err.message}`);
-  }
-  console.log(`Step 4a (connect) complete: ${Date.now() - startTime}ms`);
-
-  // Step 5: Insert user
-  console.log("Step 5: Inserting user...");
-  try {
-    const result = await users.insertOne({
-      name: name.trim(),
-      email: email.toLowerCase().trim(),
-      password: hashedPassword,
-      createdAt: new Date(),
-    });
-    
-    console.log(`Step 5 complete: ${Date.now() - startTime}ms`);
-    
-    return NextResponse.json({ 
-      success: true,
-      userId: result.insertedId.toString(),
-      message: 'User created successfully'
-    }, { status: 201 });
-    
-  } catch (error: unknown) {
-    const err = error as Error;
-    if ((err as any).code === 11000) {
-      // Duplicate email
-      return NextResponse.json({ 
-        error: 'Email already exists' 
-      }, { status: 409 });
+    const { email, name, password } = await req.json();
+    if (!email || !password) {
+      return NextResponse.json({ error: "Email and password required" }, { status: 400 });
     }
-    throw new Error(`Database insert failed: ${err.message}`);
+    
+    const client = await clientPromise;
+    const db = client.db(process.env.MONGODB_DB);
+    const existing = await db.collection("users").findOne({ email });
+    if (existing) {
+      return NextResponse.json({ error: "Email already in use" }, { status: 400 });
+    }
+    const hashed = await bcrypt.hash(password, 10);
+    const user = await db.collection("users").insertOne({ email, name, password: hashed });
+    return NextResponse.json({ id: user.insertedId, email });
+  } catch (error) {
+    console.error("Signup error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
