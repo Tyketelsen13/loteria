@@ -8,15 +8,29 @@ export default function SessionDebug() {
   const [clientSession, setClientSession] = useState(null);
 
   useEffect(() => {
-    // Test direct session fetch
-    fetch('/api/auth/session')
-      .then(res => res.json())
+    // Test direct session fetch to backend
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    const sessionUrl = backendUrl ? `${backendUrl}/api/auth/session` : '/api/auth/session';
+    
+    console.log('Fetching session from:', sessionUrl);
+    
+    fetch(sessionUrl, {
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+      .then(res => {
+        console.log('Session fetch response status:', res.status);
+        return res.json();
+      })
       .then(data => {
-        console.log('Direct session fetch:', data);
+        console.log('Direct session fetch result:', data);
         setClientSession(data);
       })
       .catch(err => {
         console.error('Session fetch error:', err);
+        setClientSession({ error: err.message });
       });
   }, []);
 
