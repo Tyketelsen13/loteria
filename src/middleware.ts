@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // Allowed origins for CORS
 const allowedOrigins = [
+  'https://loteria-frontend-ten.vercel.app',
   'https://loteria-frontend-282jftyxa-tyketelsen13s-projects.vercel.app',
   'https://loteria-frontend-git-main-tyketelsen13s-projects.vercel.app',
   'http://localhost:3000',

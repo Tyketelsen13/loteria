@@ -34,8 +34,8 @@ export function JWTAuthProvider({ children }: { children: React.ReactNode }) {
 
   const verifyToken = async (token: string) => {
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const response = await fetch(`${backendUrl}/api/auth/jwt-verify`, {
+      // Use relative URL to leverage Next.js API rewrites
+      const response = await fetch('/api/auth/jwt-verify', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -59,8 +59,8 @@ export function JWTAuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const response = await fetch(`${backendUrl}/api/auth/jwt-login`, {
+      // Use relative URL to leverage Next.js API rewrites
+      const response = await fetch('/api/auth/jwt-login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
