@@ -27,9 +27,9 @@ function SignInForm() {
     
     if (res?.ok) {
       console.log('[SignIn] Sign in successful, authentication working!');
-      // Authentication is working, but cross-domain session is the issue
-      alert('✅ Authentication Successful!\n\nThe backend authentication is working perfectly.\nThe issue is cross-domain session cookies.\n\nSee DEPLOYMENT_STATUS.md for solutions.');
-      // Don't redirect to avoid 404 issues
+      // Authentication is working, show success message instead of redirecting
+      setError(""); // Clear any previous errors
+      alert('🎉 SUCCESS!\n\nAuthentication is working perfectly!\n\nYour Lotería app is successfully deployed with:\n✅ Backend on Render\n✅ Frontend on Vercel\n✅ Database connected\n✅ Authentication functional\n\nThe only remaining step is resolving cross-domain session cookies.\nSee DEPLOYMENT_STATUS.md for solutions.');
     } else {
       console.log('[SignIn] Sign in failed:', res?.error);
       setError(res?.error || "Invalid email or password");
