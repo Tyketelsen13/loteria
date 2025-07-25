@@ -1,7 +1,17 @@
 import { NextRequest } from "next/server";
-import { createCanvas, loadImage } from "canvas";
 import path from "path";
 import { promises as fs } from "fs";
+
+// Dynamic import to handle canvas module
+let createCanvas: any, loadImage: any;
+
+try {
+  const canvasModule = require("canvas");
+  createCanvas = canvasModule.createCanvas;
+  loadImage = canvasModule.loadImage;
+} catch (error) {
+  console.log("Canvas module not available in this environment");
+}
 
 export const runtime = "nodejs";
 
@@ -24,57 +34,83 @@ function wordToFilename(word: string) {
 }
 
 export async function GET(req: NextRequest) {
+  // Check if canvas is available
+  if (!createCanvas || !loadImage) {
+    return new Response(
+      JSON.stringify({ error: "Canvas not available in this environment" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      }
+    );
+  }
+
   const { searchParams } = new URL(req.url);
   const words = (searchParams.get("words")?.split(",") || DEFAULT_WORDS).slice(0, 16);
 
-  // Board config
-  const cols = 4;
-  const rows = 4;
-  const cardW = 150;
-  const cardH = 200;
-  const boardW = cols * cardW;
-  const boardH = rows * cardH;
+  try {
+    // Board config
+    const cols = 4;
+    const rows = 4;
+    const cardW = 150;
+    const cardH = 200;
+    const boardW = cols * cardW;
+    const boardH = rows * cardH;
 
-  const canvas = createCanvas(boardW, boardH);
-  const ctx = canvas.getContext("2d");
+    const canvas = createCanvas(boardW, boardH);
+    const ctx = canvas.getContext("2d");
 
-  // Draw each card
-  for (let i = 0; i < words.length; i++) {
-    const x = (i % cols) * cardW;
-    const y = Math.floor(i / cols) * cardH;
-    // Card background
-    ctx.fillStyle = `hsl(${(i * 40) % 360}, 70%, 85%)`;
-    ctx.fillRect(x, y, cardW, cardH);
-    ctx.strokeStyle = "#be185d";
-    ctx.lineWidth = 4;
-    ctx.strokeRect(x, y, cardW, cardH);
-    // Try to load image for this word
-    const filename = wordToFilename(words[i]);
-    const imgPath = path.join(process.cwd(), "public", "cards", filename);
-    try {
-      await fs.access(imgPath);
-      const img = await loadImage(imgPath);
-      ctx.drawImage(img, x + 15, y + 15, cardW - 30, cardH - 60);
-    } catch {
-      // If image not found, draw a placeholder icon
-      ctx.beginPath();
-      ctx.arc(x + cardW / 2, y + cardH / 2 - 20, 30, 0, 2 * Math.PI);
-      ctx.fillStyle = `hsl(${(i * 40 + 180) % 360}, 60%, 70%)`;
-      ctx.fill();
-      ctx.closePath();
+    // Draw each card
+    for (let i = 0; i < words.length; i++) {
+      const x = (i % cols) * cardW;
+      const y = Math.floor(i / cols) * cardH;
+      
+      // Card background
+      ctx.fillStyle = `hsl(${(i * 40) % 360}, 70%, 85%)`;
+      ctx.fillRect(x, y, cardW, cardH);
+      ctx.strokeStyle = "#be185d";
+      ctx.lineWidth = 4;
+      ctx.strokeRect(x, y, cardW, cardH);
+      
+      // Try to load image for this word
+      const filename = wordToFilename(words[i]);
+      const imgPath = path.join(process.cwd(), "public", "cards", filename);
+      
+      try {
+        await fs.access(imgPath);
+        const img = await loadImage(imgPath);
+        ctx.drawImage(img, x + 15, y + 15, cardW - 30, cardH - 60);
+      } catch {
+        // If image not found, draw a placeholder icon
+        ctx.beginPath();
+        ctx.arc(x + cardW / 2, y + cardH / 2 - 20, 30, 0, 2 * Math.PI);
+        ctx.fillStyle = `hsl(${(i * 40 + 180) % 360}, 60%, 70%)`;
+        ctx.fill();
+        ctx.closePath();
+      }
+      
+      // Card word
+      ctx.font = "bold 20px sans-serif";
+      ctx.fillStyle = "#1e293b";
+      ctx.textAlign = "center";
+      ctx.fillText(words[i], x + cardW / 2, y + cardH - 20);
     }
-    // Card word
-    ctx.font = "bold 20px sans-serif";
-    ctx.fillStyle = "#1e293b";
-    ctx.textAlign = "center";
-    ctx.fillText(words[i], x + cardW / 2, y + cardH - 20);
+
+    const buffer = canvas.toBuffer("image/png");
+    return new Response(buffer, {
+      headers: {
+        "Content-Type": "image/png",
+        "Cache-Control": "no-store"
+      }
+    });
+  } catch (error) {
+    console.error("Board generation error:", error);
+    return new Response(
+      JSON.stringify({ error: "Failed to generate board" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      }
+    );
   }
-
-  const buffer = canvas.toBuffer("image/png");
-  return new Response(buffer, {
-    headers: {
-      "Content-Type": "image/png",
-      "Cache-Control": "no-store"
-    }
-  });
 }
