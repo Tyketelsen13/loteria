@@ -1,21 +1,14 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  // Enable Turbopack (recommended over Webpack in newer Next.js)
-  turbopack: {
-    // Add valid Turbopack options here if needed
-  },
-
-  // Production optimizations - Remove standalone for Railway
+  // API-only backend configuration for Render
   poweredByHeader: false,
   compress: true,
   
-  // Skip linting during build for deployment
+  // Skip linting and TypeScript checking for faster builds
   eslint: {
     ignoreDuringBuilds: true,
   },
-
-  // Skip TypeScript checking during build
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -28,39 +21,28 @@ const nextConfig: NextConfig = {
     'canvas'
   ],
 
-  // You can still use other stable settings here
-  reactStrictMode: true,
-  images: {
-    remotePatterns: [
+  // CORS configuration for frontend access
+  async headers() {
+    return [
       {
-        protocol: 'https',
-        hostname: 'ui-avatars.com',
+        source: '/api/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization, X-Requested-With' },
+          { key: 'Access-Control-Allow-Credentials', value: 'true' },
+        ],
       },
-      {
-        protocol: 'https',
-        hostname: '**.imagine.art',
-      },
-      {
-        protocol: 'https',
-        hostname: 'imagine.art',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
-    ],
+    ]
   },
 
-  // Webpack configuration to handle potential bundling issues
-  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
-    // Handle canvas module for server-side rendering
+  // Webpack configuration for Canvas
+  webpack: (config, { isServer }) => {
     if (isServer) {
       config.externals.push('canvas')
     }
-    
     return config
   },
 }
 
 export default nextConfig
-

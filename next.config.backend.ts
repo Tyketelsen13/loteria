@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  // Backend-only configuration for Render
+  // API-only backend configuration for Render
   poweredByHeader: false,
   compress: true,
   
@@ -21,25 +21,15 @@ const nextConfig: NextConfig = {
     'canvas'
   ],
 
-  // API-only - no frontend routes
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: '/api/:path*',
-      },
-    ]
-  },
-
   // CORS configuration for frontend access
   async headers() {
     return [
       {
         source: '/api/:path*',
         headers: [
-          { key: 'Access-Control-Allow-Origin', value: process.env.FRONTEND_URL || 'http://localhost:3000' },
+          { key: 'Access-Control-Allow-Origin', value: '*' },
           { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
-          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization, X-Requested-With' },
           { key: 'Access-Control-Allow-Credentials', value: 'true' },
         ],
       },
