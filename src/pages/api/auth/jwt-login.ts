@@ -22,12 +22,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Find user
     const user = await usersCollection.findOne({ email });
+    console.log('JWT Login - User found:', !!user, 'Has password:', !!user?.password);
     if (!user || !user.password) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     // Verify password
+    console.log('JWT Login - Attempting password verification for:', email);
     const isValid = await bcrypt.compare(password, user.password);
+    console.log('JWT Login - Password valid:', isValid);
     if (!isValid) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
