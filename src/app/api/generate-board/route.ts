@@ -1,7 +1,16 @@
 import { NextRequest } from "next/server";
-import { createCanvas, loadImage } from "canvas";
 import path from "path";
 import { promises as fs } from "fs";
+
+// Optional canvas import
+let createCanvas: any, loadImage: any;
+try {
+  const canvas = require("canvas");
+  createCanvas = canvas.createCanvas;
+  loadImage = canvas.loadImage;
+} catch (error) {
+  console.warn("Canvas not available, board generation will be disabled");
+}
 
 export const runtime = "nodejs";
 
@@ -24,6 +33,14 @@ function wordToFilename(word: string) {
 }
 
 export async function GET(req: NextRequest) {
+  // Check if canvas is available
+  if (!createCanvas || !loadImage) {
+    return new Response(
+      JSON.stringify({ error: "Image generation not available" }), 
+      { status: 503, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   const { searchParams } = new URL(req.url);
   const words = (searchParams.get("words")?.split(",") || DEFAULT_WORDS).slice(0, 16);
 

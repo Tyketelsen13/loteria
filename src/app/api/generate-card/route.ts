@@ -1,9 +1,26 @@
 import { NextRequest } from "next/server";
-import { createCanvas, loadImage } from "canvas";
+
+// Optional canvas import
+let createCanvas: any, loadImage: any;
+try {
+  const canvas = require("canvas");
+  createCanvas = canvas.createCanvas;
+  loadImage = canvas.loadImage;
+} catch (error) {
+  console.warn("Canvas not available, card generation will be disabled");
+}
 
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
+  // Check if canvas is available
+  if (!createCanvas || !loadImage) {
+    return new Response(
+      JSON.stringify({ error: "Image generation not available" }), 
+      { status: 503, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   // Example: ?text=El Gallo
   const { searchParams } = new URL(req.url);
   const text = searchParams.get("text") || "Lotería";
