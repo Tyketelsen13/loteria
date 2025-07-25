@@ -1,0 +1,12 @@
+# Nixpacks configuration for Railway
+[variables]
+NODE_VERSION = "20"
+
+[phases.build]
+cmds = [
+  "npm ci",
+  "npm run build"
+]
+
+[phases.start]
+cmd = "npm start"

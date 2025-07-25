@@ -1,30 +1,34 @@
-# Use Node.js 18 Alpine for smaller image
-FROM node:18-alpine AS base
+# Use Node.js 20 Alpine for better compatibility
+FROM node:20-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-# Install canvas dependencies for Alpine Linux
-RUN apk add --no-cache libc6-compat cairo-dev jpeg-dev pango-dev giflib-dev librsvg-dev build-base g++ make python3
+# Install Canvas dependencies
+RUN apk add --no-cache \
+    libc6-compat \
+    cairo-dev \
+    jpeg-dev \
+    pango-dev \
+    giflib-dev \
+    librsvg-dev \
+    pixman-dev \
+    pkgconfig \
+    make \
+    g++
 WORKDIR /app
 
 # Install dependencies
 COPY package.json package-lock.json* ./
-RUN npm ci --production=false --legacy-peer-deps || npm install --production=false --legacy-peer-deps
-RUN npm cache clean --force
+RUN npm ci --legacy-peer-deps
 
 # Rebuild the source code only when needed
 FROM base AS builder
-# Install canvas dependencies for building
-RUN apk add --no-cache libc6-compat cairo-dev jpeg-dev pango-dev giflib-dev librsvg-dev build-base g++ make python3
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Disable telemetry during build
 ENV NEXT_TELEMETRY_DISABLED 1
-# Set a dummy MongoDB URI for build time (not used during static generation)
-ENV MONGODB_URI="mongodb://localhost:27017/dummy"
-ENV MONGODB_DB="dummy"
 
 RUN npm run build
 
