@@ -7,8 +7,6 @@
 
 import UserInfo from "@/components/UserInfo";
 import Link from "next/link";
-import SettingsMenu from "@/components/SettingsMenu";
-import FriendsMenu from "@/components/FriendsMenu";
 import ProfileMenu from "@/components/ProfileMenu";
 import { useEffect, useState } from "react";
 import { FaUserFriends, FaRobot, FaLock, FaPlus, FaGamepad, FaSync } from "react-icons/fa";
@@ -77,17 +75,12 @@ export default function Home() {
   // Main Home Page - styled to match the vintage/western Lotería theme
   return (
     <div className="min-h-screen bg-[#f8ecd7] dark:bg-[#18181b] bg-[url('/parchment-bg.png')] dark:bg-none bg-cover flex flex-col items-center justify-center p-4 sm:p-8 relative transition-colors">
-      {/* Floating Menus (Friends/Profile) */}
+      {/* Floating Menus (Profile only) */}
       <div className="fixed top-4 right-4 z-50 flex gap-2">
-        <FriendsMenu />
         <ProfileMenu />
       </div>
       {/* Main Card - vintage style */}
       <div className="w-full max-w-3xl bg-white/90 dark:bg-gray-900/90 border-4 border-[#b89c3a] dark:border-yellow-700 rounded-3xl shadow-2xl p-8 flex flex-col items-center gap-8 relative mt-8 drop-shadow-xl transition-colors">
-        {/* Settings Icon at edge of card */}
-        <div className="absolute top-4 right-4 z-20">
-          <SettingsMenu />
-        </div>
         <div className="flex flex-col items-center gap-2 animate-fade-in">
           {/* Main Heading - western font */}
           <h1 className="text-5xl font-western font-extrabold text-center text-red-600 dark:text-red-400 tracking-widest drop-shadow mb-2 transition-colors">

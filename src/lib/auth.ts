@@ -66,10 +66,22 @@ export const authOptions: NextAuthOptions = {
       if (token && session.user) {
         session.user.id = token.sub || token.id;
         
-        // Optimized for Vercel - skip database fetch in session callback
-        // User data should be fresh from JWT token
-        if (token.name) session.user.name = token.name;
-        if (token.image) session.user.image = token.image;
+        // Fetch fresh user data from database to get updated avatar
+        try {
+          const client = await clientPromise;
+          const users = client.db(process.env.MONGODB_DB).collection('users');
+          const user = await users.findOne({ email: session.user.email });
+          
+          if (user) {
+            session.user.name = user.name || token.name;
+            session.user.image = user.image || token.image;
+          }
+        } catch (error) {
+          console.error('Error fetching user data in session callback:', error);
+          // Fallback to token data
+          if (token.name) session.user.name = token.name;
+          if (token.image) session.user.image = token.image;
+        }
       }
       return session;
     },

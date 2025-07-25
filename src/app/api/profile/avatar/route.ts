@@ -61,6 +61,8 @@ export async function POST(request: NextRequest) {
           formData.append('aspect_ratio', '1:1');
           formData.append('seed', Math.floor(Math.random() * 1000).toString());
 
+          console.log("Calling ImagineArt API with prompt:", finalPrompt);
+
           const response = await fetch("https://api.vyro.ai/v2/image/generations", {
             method: "POST",
             headers: {
@@ -72,21 +74,37 @@ export async function POST(request: NextRequest) {
           let imageUrl = null;
 
           if (response.ok) {
-            // Save the image to a temporary location
-            const imageBuffer = await response.arrayBuffer();
-            const fileName = `avatar-${session.user.email.replace('@', '-').replace('.', '-')}-${Date.now()}.png`;
-            const filePath = path.join(process.cwd(), "public", "avatars", fileName);
-            
-            // Create avatars directory if it doesn't exist
-            const avatarsDir = path.join(process.cwd(), "public", "avatars");
-            if (!fs.existsSync(avatarsDir)) {
-              fs.mkdirSync(avatarsDir, { recursive: true });
+            // Check if response is JSON (URL) or binary (image data)
+            const contentType = response.headers.get('content-type');
+            console.log("ImagineArt API response content-type:", contentType);
+
+            if (contentType?.includes('application/json')) {
+              // API returns JSON with image URL
+              const data = await response.json();
+              console.log("ImagineArt API JSON response:", data);
+              
+              if (data.url || data.image_url || data.data?.[0]?.url) {
+                // Use the returned URL directly
+                imageUrl = data.url || data.image_url || data.data[0].url;
+                console.log("ImagineArt API success: Using direct URL", imageUrl);
+              }
+            } else {
+              // API returns binary image data - save it locally
+              const imageBuffer = await response.arrayBuffer();
+              const fileName = `avatar-${session.user.email.replace('@', '-').replace('.', '-')}-${Date.now()}.png`;
+              const filePath = path.join(process.cwd(), "public", "avatars", fileName);
+              
+              // Create avatars directory if it doesn't exist
+              const avatarsDir = path.join(process.cwd(), "public", "avatars");
+              if (!fs.existsSync(avatarsDir)) {
+                fs.mkdirSync(avatarsDir, { recursive: true });
+              }
+              
+              // Save the image
+              fs.writeFileSync(filePath, Buffer.from(imageBuffer));
+              imageUrl = `/avatars/${fileName}`;
+              console.log("ImagineArt API success: Saved avatar to", imageUrl);
             }
-            
-            // Save the image
-            fs.writeFileSync(filePath, Buffer.from(imageBuffer));
-            imageUrl = `/avatars/${fileName}`;
-            console.log("ImagineArt API success: Saved avatar to", imageUrl);
           } else {
             const errorText = await response.text();
             console.error("ImagineArt API error:", response.status, errorText);
@@ -94,6 +112,7 @@ export async function POST(request: NextRequest) {
 
           // Fallback to ui-avatars if Imagine Art fails
           if (!imageUrl) {
+            console.log("ImagineArt API failed, using fallback avatar service");
             const colors = ['e1b866', 'b89c3a', '8c2f2b', 'd4a574', 'c49158', '9a2e2a'];
             const randomColor = colors[Math.floor(Math.random() * colors.length)];
             const seed = Math.random().toString(36).substring(7);
@@ -102,22 +121,49 @@ export async function POST(request: NextRequest) {
           }
 
           if (!imageUrl) {
+            console.error("Both ImagineArt and fallback avatar generation failed");
             return NextResponse.json({ error: "Failed to generate avatar" }, { status: 500 });
           }
 
           // Update user's avatar in database
+          console.log("Updating user avatar in database:", imageUrl);
           const client = await clientPromise;
-          const db = client.db(process.env.MONGODB_DB);
+          const db = client.db(process.env.MONGODB_DB || "loteria");
           
           await db.collection("users").updateOne(
             { email: session.user.email },
             { $set: { image: imageUrl } }
           );
 
+          console.log("Avatar generation completed successfully");
           return NextResponse.json({ success: true, imageUrl });
         } catch (error) {
           console.error("Avatar generation error:", error);
-          return NextResponse.json({ error: "Failed to generate avatar" }, { status: 500 });
+          console.error("Error stack:", error instanceof Error ? error.stack : 'No stack available');
+          
+          // Always provide fallback even on error
+          try {
+            console.log("Attempting emergency fallback avatar");
+            const colors = ['e1b866', 'b89c3a', '8c2f2b', 'd4a574', 'c49158', '9a2e2a'];
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            const seed = Math.random().toString(36).substring(7);
+            const fallbackUrl = `https://ui-avatars.com/api/?name=Loteria+Player&size=200&background=${randomColor}&color=ffffff&font-size=0.33&format=png&seed=${seed}`;
+            
+            // Update user's avatar in database with fallback
+            const client = await clientPromise;
+            const db = client.db(process.env.MONGODB_DB || "loteria");
+            
+            await db.collection("users").updateOne(
+              { email: session.user.email },
+              { $set: { image: fallbackUrl } }
+            );
+            
+            console.log("Emergency fallback avatar set:", fallbackUrl);
+            return NextResponse.json({ success: true, imageUrl: fallbackUrl });
+          } catch (fallbackError) {
+            console.error("Emergency fallback also failed:", fallbackError);
+            return NextResponse.json({ error: "Failed to generate avatar" }, { status: 500 });
+          }
         }
       }
     }
