@@ -15,13 +15,14 @@ if (!process.env.MONGODB_URI) {
 
 const uri = process.env.MONGODB_URI;
 
-// Vercel-optimized configuration
+// Vercel-optimized configuration (ultra-fast)
 const clientOptions: MongoClientOptions = {
   maxPoolSize: 1, // Limit connections for serverless
-  serverSelectionTimeoutMS: 5000, // 5 second timeout
-  socketTimeoutMS: 5000,
-  connectTimeoutMS: 5000,
+  serverSelectionTimeoutMS: 3000, // 3 second timeout (reduced)
+  socketTimeoutMS: 3000, // 3 second timeout (reduced)
+  connectTimeoutMS: 3000, // 3 second timeout (reduced)
   family: 4, // Use IPv4, skip trying IPv6
+  maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
 };
 
 let client: MongoClient;

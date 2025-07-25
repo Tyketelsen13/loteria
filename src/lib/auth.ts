@@ -19,9 +19,9 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          // Timeout for Vercel
+          // Aggressive timeout for Vercel (2 seconds)
           const timeoutPromise = new Promise<null>((_, reject) => 
-            setTimeout(() => reject(new Error('Auth timeout')), 4000)
+            setTimeout(() => reject(new Error('Auth timeout')), 2000)
           );
 
           const authPromise = async () => {

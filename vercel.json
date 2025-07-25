@@ -9,7 +9,7 @@
       "maxDuration": 10
     },
     "src/app/api/auth/**/*.ts": {
-      "maxDuration": 8
+      "maxDuration": 6
     }
   },
   "env": {
