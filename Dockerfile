@@ -1,8 +1,9 @@
-# Use Node.js 20 Alpine for better compatibility
-FROM node:20-alpine AS base
+# Use the official lightweight Node.js 18 image.
+FROM node:18-alpine
 
-# Install dependencies only when needed
-FROM base AS deps
+# Set working directory
+WORKDIR /app
+
 # Install Canvas dependencies
 RUN apk add --no-cache \
     libc6-compat \
@@ -14,71 +15,32 @@ RUN apk add --no-cache \
     pixman-dev \
     pkgconfig \
     make \
-    g++
-WORKDIR /app
+    g++ \
+    python3
+
+# Copy package files
+COPY package*.json ./
 
 # Install dependencies
-COPY package.json package-lock.json* ./
 RUN npm ci --legacy-peer-deps
 
-# Rebuild the source code only when needed
-FROM base AS builder
-# Install Canvas dependencies in builder stage too
-RUN apk add --no-cache \
-    libc6-compat \
-    cairo-dev \
-    jpeg-dev \
-    pango-dev \
-    giflib-dev \
-    librsvg-dev \
-    pixman-dev \
-    pkgconfig \
-    make \
-    g++
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+# Copy source code
 COPY . .
 
-# Disable telemetry during build
-ENV NEXT_TELEMETRY_DISABLED 1
+# Set environment variables
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+ENV SKIP_DB_VALIDATION=true
 
+# Build the application
 RUN npm run build
 
-# Production image, copy all the files and run next
-FROM base AS runner
-# Install Canvas dependencies in runtime stage too
-RUN apk add --no-cache \
-    libc6-compat \
-    cairo \
-    jpeg \
-    pango \
-    giflib \
-    librsvg \
-    pixman
-WORKDIR /app
+# Remove dev dependencies to reduce image size
+RUN npm prune --production
 
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-COPY --from=builder /app/public ./public
-
-# Set the correct permission for prerender cache
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
-
-# Copy the built application
-COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
-
-USER nextjs
-
+# Expose port
 EXPOSE 3000
 
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
-
+# Start the application
 CMD ["npm", "start"]
