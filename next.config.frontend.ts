@@ -42,7 +42,8 @@ const nextConfig: NextConfig = {
   serverExternalPackages: [
     'mongoose', 
     'mongodb',
-    'bcrypt'
+    'bcrypt',
+    'socket.io'
   ],
 
   // API routes will be proxied to backend
@@ -60,7 +61,7 @@ const nextConfig: NextConfig = {
   webpack: (config, { isServer }) => {
     if (isServer) {
       // Mark backend-only modules as external
-      config.externals.push('bcrypt', 'mongodb', 'mongoose')
+      config.externals.push('bcrypt', 'mongodb', 'mongoose', 'socket.io')
     }
     return config
   },
