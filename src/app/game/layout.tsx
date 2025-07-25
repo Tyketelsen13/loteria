@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import { useJWTAuth } from "../../context/JWTAuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -10,19 +11,24 @@ export default function GameLayout({
   children: React.ReactNode;
 }) {
   const { data: session, status } = useSession();
+  const { user: jwtUser, loading: jwtLoading } = useJWTAuth();
   const router = useRouter();
+
+  // Check if user is authenticated via either NextAuth or JWT
+  const isAuthenticated = session?.user || jwtUser;
+  const authLoading = status === "loading" || jwtLoading;
 
   // Redirect to signin if not authenticated
   useEffect(() => {
-    if (status === "loading") return; // Still loading
-    if (status === "unauthenticated") {
+    if (authLoading) return; // Still loading
+    if (!isAuthenticated) {
       router.push("/auth/signin");
       return;
     }
-  }, [status, router]);
+  }, [isAuthenticated, authLoading, router]);
 
   // Show loading while checking authentication
-  if (status === "loading") {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-[#f8ecd7] flex items-center justify-center">
         <div className="text-xl font-medium text-[#8c2f2b]">Loading...</div>
@@ -31,7 +37,7 @@ export default function GameLayout({
   }
 
   // Don't render anything if not authenticated (redirect in progress)
-  if (status === "unauthenticated") {
+  if (!isAuthenticated) {
     return null;
   }
 
