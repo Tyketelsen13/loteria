@@ -77,19 +77,19 @@ export default function Home() {
   // Fetch available public lobbies
   useEffect(() => {
     fetchLobbies();
-  }, [status]);
+  }, [isAuthenticated]);
 
-  // Show loading while checking authentication
-  if (status === "loading") {
+  // Show loading while determining authentication status
+  if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#f8ecd7] flex items-center justify-center">
-        <div className="text-xl font-medium text-[#8c2f2b]">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-[#f8ecd7]">
+        <div className="text-xl font-semibold text-[#8c2f2b]">Loading...</div>
       </div>
     );
   }
 
   // Don't render anything if not authenticated (redirect in progress)
-  if (status === "unauthenticated") {
+  if (!isAuthenticated) {
     return null;
   }
 
