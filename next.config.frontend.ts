@@ -38,6 +38,13 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  // External packages that should not be bundled
+  serverExternalPackages: [
+    'mongoose', 
+    'mongodb',
+    'bcrypt'
+  ],
+
   // API routes will be proxied to backend
   async rewrites() {
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
@@ -47,6 +54,15 @@ const nextConfig: NextConfig = {
         destination: `${backendUrl}/api/:path*`,
       },
     ]
+  },
+
+  // Webpack configuration
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // Mark backend-only modules as external
+      config.externals.push('bcrypt', 'mongodb', 'mongoose')
+    }
+    return config
   },
 }
 
