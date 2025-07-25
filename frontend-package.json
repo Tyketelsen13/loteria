@@ -7,7 +7,8 @@
     "dev:webpack": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "upload-cards": "node scripts/upload-cards-to-cloudinary.js"
   },
   "dependencies": {
     "@next-auth/mongodb-adapter": "^1.1.3",

@@ -1,0 +1,9 @@
+# Ignore custom cards since they're now on Cloudinary
+public/custom-cards/
+
+# Upload script (not needed in production)
+scripts/upload-cards-to-cloudinary.js
+
+# Environment files
+.env.local
+.env.*.local

@@ -127,7 +127,43 @@ export function getCardImageForDeck(cardName: string, deckThemeId: string): stri
     
     standardFilename = genderCorrections[standardFilename] || standardFilename;
   }
+
+  // Use Cloudinary URLs in production (when CLOUDINARY_CLOUD_NAME is set)
+  const useCloudinary = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME && process.env.NODE_ENV === 'production';
   
+  if (useCloudinary) {
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const baseUrl = `https://res.cloudinary.com/${cloudName}/image/upload/f_auto,q_auto/loteria-cards`;
+    
+    switch (deckThemeId) {
+      case 'cute-adorable':
+        if (mapping?.cuteAdorable) {
+          return `${baseUrl}/68796740a83d8baf97ca977a/${mapping.cuteAdorable.replace('.png', '')}`;
+        }
+        return `${baseUrl}/cards/${standardFilename}`;
+        
+      case 'dark-mysterious':
+        if (mapping?.darkMysterious) {
+          return `${baseUrl}/68796740a83d8baf97ca977a/${mapping.darkMysterious.replace('.png', '')}`;
+        }
+        return `${baseUrl}/cards/${standardFilename}`;
+        
+      case 'horror':
+        return `${baseUrl}/horror-theme/${standardFilename}-horror`;
+        
+      case 'fantasy':
+        if (mapping?.fantasy) {
+          return `${baseUrl}/fantasy-theme/${mapping.fantasy.replace('.png', '')}`;
+        }
+        return `${baseUrl}/fantasy-theme/${standardFilename}-fantasy`;
+        
+      case 'traditional':
+      default:
+        return `${baseUrl}/cards/${standardFilename}`;
+    }
+  }
+  
+  // Local development - use local files
   switch (deckThemeId) {
     case 'cute-adorable':
       if (mapping?.cuteAdorable) {
