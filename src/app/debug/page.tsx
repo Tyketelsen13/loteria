@@ -3,9 +3,19 @@
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 
+interface SessionData {
+  user?: {
+    name?: string;
+    email?: string;
+    image?: string;
+  };
+  expires?: string;
+  error?: string;
+}
+
 export default function SessionDebug() {
   const { data: session, status } = useSession();
-  const [clientSession, setClientSession] = useState(null);
+  const [clientSession, setClientSession] = useState<SessionData | null>(null);
 
   useEffect(() => {
     // Test direct session fetch to backend

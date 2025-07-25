@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useJWTAuth } from '../../context/JWTAuthContext';
 import dynamic from 'next/dynamic';
 
@@ -66,7 +66,7 @@ function JWTSigninInner() {
             type="email"
             placeholder="Email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
             required
             style={{
               width: '100%',
@@ -84,7 +84,7 @@ function JWTSigninInner() {
             type="password"
             placeholder="Password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
             required
             style={{
               width: '100%',
