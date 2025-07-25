@@ -3,21 +3,28 @@ FROM node:18-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
+# Install canvas dependencies for Alpine Linux
+RUN apk add --no-cache libc6-compat cairo-dev jpeg-dev pango-dev giflib-dev librsvg-dev build-base g++ make python3
 WORKDIR /app
 
 # Install dependencies
 COPY package.json package-lock.json* ./
-RUN npm install --production=false --legacy-peer-deps && npm cache clean --force
+RUN npm ci --production=false --legacy-peer-deps || npm install --production=false --legacy-peer-deps
+RUN npm cache clean --force
 
 # Rebuild the source code only when needed
 FROM base AS builder
+# Install canvas dependencies for building
+RUN apk add --no-cache libc6-compat cairo-dev jpeg-dev pango-dev giflib-dev librsvg-dev build-base g++ make python3
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Disable telemetry during build
 ENV NEXT_TELEMETRY_DISABLED 1
+# Set a dummy MongoDB URI for build time (not used during static generation)
+ENV MONGODB_URI="mongodb://localhost:27017/dummy"
+ENV MONGODB_DB="dummy"
 
 RUN npm run build
 
