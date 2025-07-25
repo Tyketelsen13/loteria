@@ -19,7 +19,7 @@ Add these in your Vercel project settings under "Environment Variables":
 - **Environment:** Production, Preview, Development
 
 - **Variable Name:** `NEXTAUTH_URL`
-- **Value:** `https://your-project-name.vercel.app` (update with your actual Vercel URL)
+- **Value:** `https://loteria-phi-taupe.vercel.app/auth/signin` (update with your actual Vercel URL)
 - **Environment:** Production, Preview
 
 ### Optional API Keys:
