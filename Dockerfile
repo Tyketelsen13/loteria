@@ -27,17 +27,22 @@ RUN npm ci --legacy-peer-deps
 # Copy source code
 COPY . .
 
-# Set environment variables
+# Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_ENV=production
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 ENV SKIP_DB_VALIDATION=true
 
 # Build the application
 RUN npm run build
 
+# Remove the build-only environment variable
+ENV SKIP_DB_VALIDATION=
+
 # Remove dev dependencies to reduce image size
 RUN npm prune --production
+
+# Set production environment
+ENV NODE_ENV=production
 
 # Expose port
 EXPOSE 3000
