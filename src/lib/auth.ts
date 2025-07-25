@@ -19,18 +19,34 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (skipDB) return null;
         if (!credentials || !credentials.email || !credentials.password) return null;
-        const client = await clientPromise;
-        const db = client.db(process.env.MONGODB_DB);
-        const user = await db.collection("users").findOne({ email: credentials.email });
-        if (!user || !user.password) return null;
-        const isValid = await bcrypt.compare(credentials.password, user.password);
-        if (!isValid) return null;
-        return { 
-          id: user._id.toString(), 
-          email: user.email, 
-          name: user.name,
-          image: user.image 
-        };
+        
+        try {
+          const client = await clientPromise;
+          const db = client.db(process.env.MONGODB_DB);
+          const user = await db.collection("users").findOne({ email: credentials.email });
+          
+          if (!user || !user.password) {
+            console.log('User not found or no password for:', credentials.email);
+            return null;
+          }
+          
+          const isValid = await bcrypt.compare(credentials.password, user.password);
+          if (!isValid) {
+            console.log('Invalid password for:', credentials.email);
+            return null;
+          }
+          
+          console.log('User authenticated successfully:', credentials.email);
+          return { 
+            id: user._id.toString(), 
+            email: user.email, 
+            name: user.name,
+            image: user.image 
+          };
+        } catch (error) {
+          console.error('Auth error:', error);
+          return null;
+        }
       },
     }),
   ],
@@ -70,4 +86,5 @@ export const authOptions: NextAuthOptions = {
     error: "/auth/error",
   },
   secret: process.env.NEXTAUTH_SECRET,
+  debug: true, // Enable debug logging
 };

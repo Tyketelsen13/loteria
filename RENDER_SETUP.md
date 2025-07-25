@@ -20,6 +20,7 @@ Add these in Render dashboard:
 ```
 MONGODB_URI=mongodb+srv://learning:Learning123@learningfs.ixcqppu.mongodb.net/?retryWrites=true&w=majority&appName=LearningFS
 MONGODB_DB=loteria
+NEXTAUTH_URL=https://loteria-backend-aoiq.onrender.com
 NEXTAUTH_SECRET=ketelsen00781008172000
 IMAGINE_ART_API_KEY=vk-TDB1wnFs2FOKLviGmiHw3JiJQA2Bc2k1wXxLZ6d32t3jbr0y
 NODE_ENV=production
@@ -37,8 +38,8 @@ Click "Create Web Service" and wait for deployment.
 
 ## Test Your Backend
 Once deployed, test these endpoints:
-- `https://your-app.onrender.com/api/health` - Health check
-- `https://your-app.onrender.com/api/build-info` - Build information
+- `https://loteria-backend-aoiq.onrender.com/api/health` - Health check
+- `https://loteria-backend-aoiq.onrender.com/api/build-info` - Build information
 
 ## Next Steps
 After backend is running:

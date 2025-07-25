@@ -4,8 +4,8 @@
 
 ### 1. Prepare Your Render Backend URL
 First, get your Render backend URL from your deployment:
-- Example: `https://loteria-backend.onrender.com`
-- Test it works: `https://your-render-url.onrender.com/api/health`
+- Your URL: `https://loteria-backend-aoiq.onrender.com`
+- Test it works: `https://loteria-backend-aoiq.onrender.com/api/health`
 
 ### 2. Deploy to Vercel
 1. Go to [vercel.com](https://vercel.com) and sign in with GitHub
@@ -23,8 +23,8 @@ Install Command: npm install --legacy-peer-deps
 ### 4. Environment Variables
 Add these in Vercel dashboard:
 ```
-NEXT_PUBLIC_API_URL=https://your-render-backend-url.onrender.com
-NEXTAUTH_URL=https://your-render-backend-url.onrender.com
+NEXT_PUBLIC_API_URL=https://loteria-backend-aoiq.onrender.com
+NEXTAUTH_URL=https://loteria-backend-aoiq.onrender.com
 NEXTAUTH_SECRET=ketelsen00781008172000
 MONGODB_URI=mongodb+srv://learning:Learning123@learningfs.ixcqppu.mongodb.net/?retryWrites=true&w=majority&appName=LearningFS
 MONGODB_DB=loteria
