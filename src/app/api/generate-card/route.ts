@@ -1,22 +1,30 @@
 import { NextRequest } from "next/server";
 
-// Optional canvas import
+// Canvas import with better error handling
 let createCanvas: any, loadImage: any;
+let canvasAvailable = false;
+
 try {
   const canvas = require("canvas");
   createCanvas = canvas.createCanvas;
   loadImage = canvas.loadImage;
+  canvasAvailable = true;
+  console.log("Canvas successfully loaded for card generation");
 } catch (error) {
-  console.warn("Canvas not available, card generation will be disabled");
+  console.warn("Canvas not available:", error instanceof Error ? error.message : error);
+  canvasAvailable = false;
 }
 
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
   // Check if canvas is available
-  if (!createCanvas || !loadImage) {
+  if (!canvasAvailable || !createCanvas || !loadImage) {
     return new Response(
-      JSON.stringify({ error: "Image generation not available" }), 
+      JSON.stringify({ 
+        error: "Card image generation not available",
+        message: "Canvas library could not be loaded. Using fallback card display."
+      }), 
       { status: 503, headers: { "Content-Type": "application/json" } }
     );
   }
