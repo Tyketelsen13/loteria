@@ -43,6 +43,7 @@ const nextConfig: NextConfig = {
     'mongoose', 
     'mongodb',
     'bcrypt',
+    'canvas',
     'socket.io'
   ],
 
@@ -61,7 +62,7 @@ const nextConfig: NextConfig = {
   webpack: (config, { isServer }) => {
     if (isServer) {
       // Mark backend-only modules as external
-      config.externals.push('bcrypt', 'mongodb', 'mongoose', 'socket.io')
+      config.externals.push('bcrypt', 'mongodb', 'mongoose', 'canvas', 'socket.io')
     }
     return config
   },
