@@ -15,21 +15,22 @@ function SignInForm() {
     e.preventDefault();
     setError("");
     
-    // For split deployment, make sure we use the correct backend URL
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    console.log('[SignIn] Attempting sign in with:', email);
     
     const res = await signIn("credentials", {
       email,
       password,
       redirect: false,
-      // Add custom backend URL if needed
-      ...(backendUrl && { callbackUrl: `${backendUrl}/api/auth/callback/credentials` })
     });
     
+    console.log('[SignIn] Sign in response:', res);
+    
     if (res?.ok) {
+      console.log('[SignIn] Sign in successful, redirecting...');
       router.push("/");
     } else {
-      setError("Invalid email or password");
+      console.log('[SignIn] Sign in failed:', res?.error);
+      setError(res?.error || "Invalid email or password");
     }
   }
 
