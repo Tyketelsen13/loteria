@@ -6,16 +6,11 @@ import { generateImagineArtCard } from "@/lib/imagineArt";
 import fs from "fs";
 import path from "path";
 
-// Helper to get admin settings
+// Helper to get admin settings from environment variables
 function getAdminSettings() {
-  try {
-    const settingsPath = path.join(process.cwd(), "admin-settings.json");
-    const settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
-    return settings;
-  } catch (error) {
-    console.error("Failed to load admin settings:", error);
-    return {};
-  }
+  return {
+    imagineArtApiKey: process.env.IMAGINE_ART_API_KEY
+  };
 }
 
 export async function POST(request: NextRequest) {
