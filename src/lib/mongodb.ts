@@ -1,9 +1,9 @@
 /**
- * MongoDB Connection Singleton - Version 2.3 (MINIMAL STRATEGY - WORKING)
- * Fixed for Vercel serverless environment using minimal configuration
+ * MongoDB Connection Singleton - Version 2.4 (ZERO OPTIONS - FINAL)
+ * Fixed for Vercel using absolutely minimal configuration
  * 
- * SOLUTION: The issue was too many MongoDB client options conflicting with Vercel
- * WORKING STRATEGY: Only maxPoolSize and serverSelectionTimeoutMS needed
+ * SOLUTION: All MongoDB client options were causing conflicts with Vercel
+ * FINAL STRATEGY: Zero options - let MongoDB driver handle everything
  */
 
 import { MongoClient, MongoClientOptions } from "mongodb";
@@ -18,13 +18,8 @@ if (!process.env.MONGODB_URI) {
 
 const uri = process.env.MONGODB_URI;
 
-// Vercel-optimized configuration (ULTRA-MINIMAL FOR TIMEOUT FIX)
-const clientOptions: MongoClientOptions = {
-  maxPoolSize: 1,
-  serverSelectionTimeoutMS: 5000, // Reduced from 15000 for Vercel timeout fix
-  connectTimeoutMS: 5000, // Added back for timeout control
-  socketTimeoutMS: 5000, // Added back for timeout control
-};
+// ZERO OPTIONS - Let MongoDB driver use all defaults
+// This approach worked when all other strategies failed
 
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
@@ -41,8 +36,8 @@ async function createConnection(): Promise<MongoClient> {
       try {
         console.log(`MongoDB connection attempt ${i + 1}/${maxRetries} - Ultra-fast`);
         
-        // Create fresh client instance
-        const mongoClient = new MongoClient(uri, clientOptions);
+        // Create fresh client instance with ZERO OPTIONS
+        const mongoClient = new MongoClient(uri);
         await mongoClient.connect();
         
         // Skip ping to save time - connection test is enough

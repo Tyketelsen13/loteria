@@ -37,6 +37,24 @@ export async function GET() {
           
           <button class="test-button" onclick="testFast()">Test Ultra-Fast Connection</button>
           <div id="fast-result" class="result"></div>
+          
+          <button class="test-button" onclick="testEmergency()">Emergency Connection Test</button>
+          <div id="emergency-result" class="result"></div>
+          
+          <button class="test-button" onclick="testZero()">Zero-Options Test</button>
+          <div id="zero-result" class="result"></div>
+        </div>
+        
+        <div style="background: #f8d7da; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+          <h3>🚨 If All Tests Fail</h3>
+          <p><strong>Your MongoDB cluster may need to be recreated.</strong></p>
+          <ol>
+            <li>Go to <a href="https://cloud.mongodb.com" target="_blank">MongoDB Atlas</a></li>
+            <li>Create NEW cluster in <strong>us-east-1</strong> region</li>
+            <li>Set Network Access to <strong>0.0.0.0/0</strong> (allow all IPs)</li>
+            <li>Create database user with <strong>readWrite</strong> permissions</li>
+            <li>Get new connection string and update <code>MONGODB_URI</code></li>
+          </ol>
         </div>
         
         <h2>Test 1: MongoDB Connection (Original)</h2>
@@ -134,6 +152,44 @@ POST /api/auth/signup</pre>
             result.innerHTML = '<div style="color: green;">⚡ ULTRA-FAST SUCCESS</div><pre>' + JSON.stringify(data, null, 2) + '</pre>';
           } catch (error) {
             result.innerHTML = '<div style="color: red;">❌ FAST TEST ERROR: ' + error.message + '</div>';
+          }
+        }
+        
+        async function testEmergency() {
+          const result = document.getElementById('emergency-result');
+          result.innerHTML = 'Testing emergency connection strategies...';
+          
+          try {
+            const response = await fetch('/api/test-emergency');
+            const data = await response.json();
+            
+            if (!response.ok) {
+              result.innerHTML = '<div style="color: red;">🚨 EMERGENCY TEST FAILED</div><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+              return;
+            }
+            
+            result.innerHTML = '<div style="color: green;">🚀 EMERGENCY SUCCESS</div><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+          } catch (error) {
+            result.innerHTML = '<div style="color: red;">❌ EMERGENCY ERROR: ' + error.message + '</div>';
+          }
+        }
+        
+        async function testZero() {
+          const result = document.getElementById('zero-result');
+          result.innerHTML = 'Testing zero-options connection (simplest possible)...';
+          
+          try {
+            const response = await fetch('/api/test-zero');
+            const data = await response.json();
+            
+            if (!response.ok) {
+              result.innerHTML = '<div style="color: red;">❌ ZERO OPTIONS FAILED</div><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+              return;
+            }
+            
+            result.innerHTML = '<div style="color: green;">✨ ZERO OPTIONS SUCCESS</div><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+          } catch (error) {
+            result.innerHTML = '<div style="color: red;">❌ ZERO OPTIONS ERROR: ' + error.message + '</div>';
           }
         }
         
