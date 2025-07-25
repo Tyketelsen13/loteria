@@ -4,49 +4,33 @@ import { MongoDBAdapter } from "@next-auth/mongodb-adapter";
 import clientPromise from "./mongodb";
 import bcrypt from "bcrypt";
 
+// Skip database operations during build time
+const skipDB = process.env.SKIP_DB_VALIDATION === "true";
+
 export const authOptions: NextAuthOptions = {
-  adapter: MongoDBAdapter(clientPromise),
+  adapter: skipDB ? undefined : MongoDBAdapter(clientPromise),
   providers: [
     CredentialsProvider({
-      name: "credentials",
+      name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
-
-        try {
-          // Aggressive timeout for Vercel (2 seconds)
-          const timeoutPromise = new Promise<null>((_, reject) => 
-            setTimeout(() => reject(new Error('Auth timeout')), 2000)
-          );
-
-          const authPromise = async () => {
-            const client = await clientPromise;
-            const users = client.db(process.env.MONGODB_DB).collection('users');
-            
-            const user = await users.findOne({ email: credentials.email });
-            
-            if (user && await bcrypt.compare(credentials.password, user.password)) {
-              return {
-                id: user._id.toString(),
-                email: user.email,
-                name: user.name,
-                image: user.image
-              };
-            }
-            return null;
-          };
-
-          const result = await Promise.race([authPromise(), timeoutPromise]);
-          return result;
-        } catch (error) {
-          console.error('Auth error:', error);
-          return null;
-        }
+        if (skipDB) return null;
+        if (!credentials || !credentials.email || !credentials.password) return null;
+        const client = await clientPromise;
+        const db = client.db(process.env.MONGODB_DB);
+        const user = await db.collection("users").findOne({ email: credentials.email });
+        if (!user || !user.password) return null;
+        const isValid = await bcrypt.compare(credentials.password, user.password);
+        if (!isValid) return null;
+        return { 
+          id: user._id.toString(), 
+          email: user.email, 
+          name: user.name,
+          image: user.image 
+        };
       },
     }),
   ],
@@ -66,21 +50,16 @@ export const authOptions: NextAuthOptions = {
       if (token && session.user) {
         session.user.id = token.sub || token.id;
         
-        // Fetch fresh user data from database to get updated avatar
-        try {
+        // Skip database operations during build time
+        if (!skipDB) {
+          // Fetch fresh user data from database to include image
           const client = await clientPromise;
-          const users = client.db(process.env.MONGODB_DB).collection('users');
-          const user = await users.findOne({ email: session.user.email });
-          
+          const db = client.db(process.env.MONGODB_DB);
+          const user = await db.collection("users").findOne({ email: session.user.email });
           if (user) {
-            session.user.name = user.name || token.name;
-            session.user.image = user.image || token.image;
+            session.user.image = user.image;
+            session.user.name = user.name;
           }
-        } catch (error) {
-          console.error('Error fetching user data in session callback:', error);
-          // Fallback to token data
-          if (token.name) session.user.name = token.name;
-          if (token.image) session.user.image = token.image;
         }
       }
       return session;
@@ -91,14 +70,4 @@ export const authOptions: NextAuthOptions = {
     error: "/auth/error",
   },
   secret: process.env.NEXTAUTH_SECRET,
-  debug: process.env.NODE_ENV === 'development',
-  // Vercel optimization
-  logger: {
-    error(code, metadata) {
-      console.error('NextAuth Error:', code, metadata);
-    },
-    warn(code) {
-      console.warn('NextAuth Warning:', code);
-    },
-  },
 };

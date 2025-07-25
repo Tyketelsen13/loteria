@@ -9,12 +9,15 @@ import { MongoClient } from "mongodb";
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
-// Validate environment variable exists
-if (!process.env.MONGODB_URI) {
+// Skip validation during build time or when SKIP_DB_VALIDATION is set
+const skipValidation = process.env.SKIP_DB_VALIDATION === "true" || process.env.NODE_ENV === "production";
+
+// Validate environment variable exists (skip during build)
+if (!process.env.MONGODB_URI && !skipValidation) {
   throw new Error("Please add your Mongo URI to .env.local");
 }
 
-const uri = process.env.MONGODB_URI!;
+const uri = process.env.MONGODB_URI || "mongodb://localhost:27017/fallback";
 const options = {}; // MongoDB client options
 
 // Environment-specific connection handling
