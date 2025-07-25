@@ -1,5 +1,4 @@
 /**
- * Basic Math Functions Test
  * Simple test to verify Jest setup is working correctly
  */
 

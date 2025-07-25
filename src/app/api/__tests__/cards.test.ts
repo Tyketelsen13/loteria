@@ -1,6 +1,6 @@
 /**
- * API Integration Tests for Lotería Online
- * Tests the /api/cards endpoint functionality
+ * API Integration Tests 
+ * Tests the cards endpoint functionality
  */
 
 // Mock fetch for testing

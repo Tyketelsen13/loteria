@@ -1,81 +1,24 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { SettingsProvider } from "@/context/SettingsContext";
 import LoteriaCard from "@/components/LoteriaCard";
 import SettingsMenu from "@/components/SettingsMenu";
 import { deckThemeOptions } from "@/lib/boardBackgrounds";
-import Link from "next/link";
-import { FaArrowLeft, FaPlay, FaRandom, FaPalette } from "react-icons/fa";
 
 // Demo page to showcase different deck themes
 export default function DeckThemeDemo() {
   const [selectedTheme, setSelectedTheme] = useState('traditional');
-  const [sampleCards, setSampleCards] = useState(["El Corazón", "La Luna", "El Sol", "La Estrella"]);
-  const [isAnimating, setIsAnimating] = useState(false);
   
-  // All available cards for randomization
-  const allCards = [
-    "El Corazón", "La Luna", "El Sol", "La Estrella", "La Rosa", "La Muerte",
-    "El Diablito", "La Dama", "El Catrin", "El Gallo", "El Borracho", "La Sirena",
-    "El Soldado", "La Corona", "El Mundo", "El Apache", "El Negrito", "La Bandera",
-    "El Bandolón", "El Violoncello", "La Garza", "El Pajaro", "La Mano", "La Bota"
-  ];
-
-  // Shuffle sample cards
-  const shuffleCards = () => {
-    setIsAnimating(true);
-    setTimeout(() => {
-      const shuffled = [...allCards].sort(() => Math.random() - 0.5).slice(0, 4);
-      setSampleCards(shuffled);
-      setIsAnimating(false);
-    }, 300);
-  };
-
-  // Auto-update localStorage when theme changes
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('deckTheme', selectedTheme);
-    }
-  }, [selectedTheme]);
+  // Sample cards to demonstrate
+  const sampleCards = ["El Corazón", "La Luna", "El Sol", "La Estrella"];
 
   return (
     <SettingsProvider>
-      <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-pink-50 to-blue-50 p-4">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <Link 
-              href="/" 
-              className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors font-medium"
-            >
-              <FaArrowLeft />
-              Back to Home
-            </Link>
-            
-            <div className="flex items-center gap-4">
-              <Link 
-                href="/game/create" 
-                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors font-medium shadow-md"
-              >
-                <FaPlay />
-                Start Game
-              </Link>
-            </div>
-          </div>
-
-          {/* Title Section */}
-          <div className="text-center mb-12">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <FaPalette className="text-4xl text-purple-600" />
-              <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Deck Theme Showcase
-              </h1>
-            </div>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Explore our collection of beautifully crafted Lotería card themes. 
-              Each deck tells its own unique story and brings a different atmosphere to your game.
-            </p>
-          </div>
+      <div className="min-h-screen bg-gray-100 p-8">
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-4xl font-bold text-center mb-8 text-gray-800">
+            Deck Theme Showcase
+          </h1>
           
           <div className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">Available Deck Themes:</h2>

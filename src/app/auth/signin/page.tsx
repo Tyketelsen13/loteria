@@ -73,7 +73,7 @@ function SignInForm() {
           Sign In
         </button>
       </form>
-      {/* Move the sign up link outside the form to prevent form submission issues */}
+      {/* Moved the sign up link outside the form to prevent form submission issues */}
       <div className="text-center mt-6 bg-white/80 border-2 border-[#b89c3a] rounded-xl p-4 text-[#3b2c1a]">
         Don't have an account?{' '}
         <Link 
