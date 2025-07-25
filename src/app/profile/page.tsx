@@ -15,22 +15,9 @@ async function generateAIAvatar(customPrompt?: string) {
       customPrompt: customPrompt 
     })
   });
-  
   if (!res.ok) {
-    // Try to get the actual error message from the server
-    let errorMessage = "Failed to generate AI avatar";
-    try {
-      const errorData = await res.json();
-      if (errorData.error) {
-        errorMessage = errorData.error;
-      }
-    } catch (e) {
-      // If we can't parse the error response, use the default message
-    }
-    console.error("Avatar generation failed:", res.status, errorMessage);
-    throw new Error(errorMessage);
+    throw new Error("Failed to generate AI avatar");
   }
-  
   return res.json();
 }
 
@@ -96,23 +83,18 @@ export default function ProfilePage() {
     setUploading(true);
     try {
       const response = await generateAIAvatar(customPrompt.trim() || undefined);
-      if (response.success && response.imageUrl) {
+      if (response.success) {
         setSuccess("🎨 New AI avatar generated successfully!");
         setCustomPrompt(""); // Clear the input after successful generation
-        
-        // Force session refresh to get updated user data from database
-        await update();
-        
-        // Clear success message after 5 seconds
-        setTimeout(() => setSuccess(""), 5000);
+        update(); // Refresh session to show new avatar
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccess(""), 3000);
       } else {
         setError("Failed to generate AI avatar. Please try again.");
       }
     } catch (err) {
       console.error("AI Avatar generation error:", err);
-      // Show the actual error message from the server
-      const errorMessage = err instanceof Error ? err.message : "Could not generate AI avatar. Please check your connection and try again.";
-      setError(errorMessage);
+      setError("Could not generate AI avatar. Please check your connection and try again.");
     }
     setUploading(false);
   }
@@ -127,17 +109,15 @@ export default function ProfilePage() {
         <div className="flex flex-col items-center gap-2">
           <div className="relative group">
             <img
-              src={user?.image ? `${user.image}?v=${uploading ? 'loading' : Date.now()}` : "https://ui-avatars.com/api/?name=Player&size=80&background=b89c3a&color=ffffff&font-size=0.33&format=png"}
+              src={user?.image || "/default-avatar.png"}
               alt="Profile"
               width={80}
               height={80}
               className="rounded-full border-2 border-[#b89c3a] dark:border-yellow-700 object-cover shadow-md transition-colors"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
-                // Use a reliable fallback avatar service
-                const fallbackUrl = "https://ui-avatars.com/api/?name=Player&size=80&background=b89c3a&color=ffffff&font-size=0.33&format=png";
-                if (target.src !== fallbackUrl) {
-                  target.src = fallbackUrl;
+                if (target.src !== `${window.location.origin}/default-avatar.png`) {
+                  target.src = "/default-avatar.png";
                 }
               }}
             />

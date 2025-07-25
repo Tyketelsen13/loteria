@@ -1,15 +1,12 @@
 {
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev:webpack",
+  "installCommand": "npm install --legacy-peer-deps",
   "framework": "nextjs",
   "regions": ["iad1"],
   "functions": {
     "src/app/api/**/*.ts": {
-      "maxDuration": 15
-    },
-    "src/app/api/test-*/**/*.ts": {
-      "maxDuration": 20
+      "maxDuration": 30
     }
-  },
-  "env": {
-    "NODE_ENV": "production"
   }
 }

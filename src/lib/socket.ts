@@ -16,8 +16,13 @@ export function getSocket() {
     const isBrowser = typeof window !== "undefined";
     let baseUrl = "";
     if (isBrowser) {
-      // Use backend URL for cross-origin deployment
-      baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://loteria-backend-aoiq.onrender.com';
+      // In development, use local backend; in production, use deployed backend
+      const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (isDevelopment) {
+        baseUrl = 'http://localhost:3001';
+      } else {
+        baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://loteria-backend-aoiq.onrender.com';
+      }
     } else {
       baseUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3001";
     }
