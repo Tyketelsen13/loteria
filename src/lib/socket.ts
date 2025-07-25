@@ -16,16 +16,16 @@ export function getSocket() {
     const isBrowser = typeof window !== "undefined";
     let baseUrl = "";
     if (isBrowser) {
-      // Use window.location.origin for same-origin, or override for dev
-      baseUrl = window.location.origin;
+      // Use backend URL for cross-origin deployment
+      baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || window.location.origin;
     } else {
-      baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+      baseUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3001";
     }
     
-    // Railway-optimized configuration
+    // Cross-origin configuration for Vercel + Render
     socket = io(baseUrl, {
       path: "/api/socket/io", // Keep your existing path
-      transports: ["websocket", "polling"], // Allow polling fallback for Railway
+      transports: ["websocket", "polling"], // Allow polling fallback
       upgrade: true, // Allow transport upgrades
       autoConnect: true,
       timeout: 20000, // Increased timeout for Railway
