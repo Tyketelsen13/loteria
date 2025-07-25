@@ -2,8 +2,14 @@
 
 import { useState } from 'react';
 import { useJWTAuth } from '../../context/JWTAuthContext';
+import dynamic from 'next/dynamic';
 
-export default function JWTSignin() {
+// Dynamic import to prevent server-side rendering
+const JWTSigninContent = dynamic(() => Promise.resolve(JWTSigninInner), { 
+  ssr: false 
+});
+
+function JWTSigninInner() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -139,4 +145,8 @@ export default function JWTSignin() {
       </form>
     </div>
   );
+}
+
+export default function JWTSignin() {
+  return <JWTSigninContent />;
 }

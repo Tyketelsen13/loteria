@@ -11,6 +11,7 @@ import HomeIcon from "@/components/HomeIcon";
 import CopyrightFooter from "@/components/CopyrightFooter";
 import SettingsMenu from "@/components/SettingsMenu";
 import { SettingsProvider } from "@/context/SettingsContext";
+import { JWTAuthProvider } from "@/context/JWTAuthContext";
 
 // Font configuration - Geist Sans for UI, Geist Mono for code
 const geistSans = Geist({
@@ -58,9 +59,11 @@ export default function RootLayout({
         {/* Global providers for settings and authentication */}
         <SettingsProvider>
           <SettingsMenu />
-          <NextAuthSessionProvider>
-            {children}
-          </NextAuthSessionProvider>
+          <JWTAuthProvider>
+            <NextAuthSessionProvider>
+              {children}
+            </NextAuthSessionProvider>
+          </JWTAuthProvider>
         </SettingsProvider>
         
         {/* Persistent UI elements on all pages */}
