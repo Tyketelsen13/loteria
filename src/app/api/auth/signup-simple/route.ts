@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcrypt";
-import { getMongoClient } from "@/lib/mongodb-simple";
+import clientPromise from "@/lib/mongodb";
 
-// Alternative signup endpoint using simple MongoDB connection
+// Simple signup endpoint using the WORKING minimal MongoDB connection
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
   
@@ -22,9 +22,9 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, 6);
     console.log(`Hashed password in ${Date.now() - startTime}ms`);
     
-    // Get MongoDB client
-    const client = await getMongoClient();
-    const db = client.db(process.env.MONGODB_DB);
+    // Get MongoDB client using the WORKING minimal connection
+    const client = await clientPromise;
+    const db = client.db(process.env.MONGODB_DB || "loteria");
     const users = db.collection('users');
     console.log(`Got DB connection in ${Date.now() - startTime}ms`);
     

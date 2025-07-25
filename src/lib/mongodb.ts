@@ -1,6 +1,9 @@
 /**
- * MongoDB Connection Singleton - Version 2.2 (Vercel Optimized)
- * Optimized for Vercel serverless environment
+ * MongoDB Connection Singleton - Version 2.3 (MINIMAL STRATEGY - WORKING)
+ * Fixed for Vercel serverless environment using minimal configuration
+ * 
+ * SOLUTION: The issue was too many MongoDB client options conflicting with Vercel
+ * WORKING STRATEGY: Only maxPoolSize and serverSelectionTimeoutMS needed
  */
 
 import { MongoClient, MongoClientOptions } from "mongodb";
@@ -15,22 +18,10 @@ if (!process.env.MONGODB_URI) {
 
 const uri = process.env.MONGODB_URI;
 
-// Vercel-optimized configuration with SSL fixes
+// Vercel-optimized configuration (MINIMAL - WORKING STRATEGY)
 const clientOptions: MongoClientOptions = {
-  maxPoolSize: 1, // Limit connections for serverless
-  serverSelectionTimeoutMS: 3000, // 3 second timeout (reduced)
-  socketTimeoutMS: 3000, // 3 second timeout (reduced)
-  connectTimeoutMS: 3000, // 3 second timeout (reduced)
-  family: 4, // Use IPv4, skip trying IPv6
-  maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
-  
-  // SSL/TLS Configuration for Vercel
-  tls: true,
-  tlsAllowInvalidCertificates: false,
-  tlsAllowInvalidHostnames: false,
-  authSource: 'admin',
-  retryWrites: true,
-  w: 'majority',
+  maxPoolSize: 1,
+  serverSelectionTimeoutMS: 15000, // Increased from 3000 based on working strategy
 };
 
 let client: MongoClient;

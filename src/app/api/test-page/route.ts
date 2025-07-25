@@ -27,6 +27,15 @@ export async function GET() {
           <button class="test-button" onclick="checkEnv()">Check Environment</button>
         </div>
         
+        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+          <h3>🩺 MongoDB Diagnostics</h3>
+          <button class="test-button" onclick="testCluster()">Analyze MongoDB Cluster</button>
+          <div id="cluster-result" class="result"></div>
+          
+          <button class="test-button" onclick="testReconnect()">Try Reconnection Strategies</button>
+          <div id="reconnect-result" class="result"></div>
+        </div>
+        
         <h2>Test 1: MongoDB Connection (Original)</h2>
         <button class="test-button" onclick="testMongo()">Test Original MongoDB</button>
         <div id="mongo-result" class="result"></div>
@@ -67,6 +76,44 @@ POST /api/auth/signup</pre>
         
         // Auto-check on load
         window.onload = checkEnv;
+        
+        async function testCluster() {
+          const result = document.getElementById('cluster-result');
+          result.innerHTML = 'Analyzing MongoDB cluster...';
+          
+          try {
+            const response = await fetch('/api/test-cluster');
+            const data = await response.json();
+            
+            if (!response.ok) {
+              result.innerHTML = '<div style="color: red;">Cluster analysis failed: ' + data.error + '</div>';
+              return;
+            }
+            
+            result.innerHTML = '<div style="color: blue;">📊 CLUSTER ANALYSIS</div><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+          } catch (error) {
+            result.innerHTML = '<div style="color: red;">❌ CLUSTER ERROR: ' + error.message + '</div>';
+          }
+        }
+        
+        async function testReconnect() {
+          const result = document.getElementById('reconnect-result');
+          result.innerHTML = 'Trying reconnection strategies...';
+          
+          try {
+            const response = await fetch('/api/test-reconnect');
+            const data = await response.json();
+            
+            if (!response.ok) {
+              result.innerHTML = '<div style="color: red;">❌ ALL STRATEGIES FAILED</div><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+              return;
+            }
+            
+            result.innerHTML = '<div style="color: green;">✅ RECONNECTION SUCCESS</div><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+          } catch (error) {
+            result.innerHTML = '<div style="color: red;">❌ RECONNECT ERROR: ' + error.message + '</div>';
+          }
+        }
         
         async function testMongo() {
           const result = document.getElementById('mongo-result');
