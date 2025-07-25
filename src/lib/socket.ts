@@ -21,11 +21,15 @@ export function getSocket() {
     } else {
       baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
     }
+    
+    // Railway-optimized configuration
     socket = io(baseUrl, {
-      path: "/api/socket/io", // Must match server.js path
-      transports: ["websocket"], // Use only WebSocket transport for reliability
-      upgrade: false,
+      path: "/api/socket/io", // Keep your existing path
+      transports: ["websocket", "polling"], // Allow polling fallback for Railway
+      upgrade: true, // Allow transport upgrades
       autoConnect: true,
+      timeout: 20000, // Increased timeout for Railway
+      forceNew: false,
     });
     // Debug connection events
     socket.on("connect", () => {
