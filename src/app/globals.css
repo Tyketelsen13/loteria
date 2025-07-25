@@ -20,7 +20,8 @@
 }
 
 body {
-  background: url('/parchment-bg.png'), linear-gradient(135deg, #f8ecd7 0%, #e1b866 100%);
+  background: linear-gradient(135deg, #f8ecd7 0%, #e1b866 100%);
+  /* background: url('/parchment-bg.png'), linear-gradient(135deg, #f8ecd7 0%, #e1b866 100%); */
   background-size: cover;
   color: #6a1a1a;
   font-family: 'IM Fell English SC', 'Georgia', 'Times New Roman', serif;
@@ -69,7 +70,8 @@ body:after {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background: url('/parchment-bg.png');
+  background: #f8ecd7;
+  /* background: url('/parchment-bg.png'); */
   opacity: 0.18;
   z-index: 0;
 }

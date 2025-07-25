@@ -60,6 +60,7 @@ export default function LoteriaCard({ name, marked = false, onClick, showHover =
     return (
       <div className={`w-24 h-32 rounded-lg overflow-hidden ${borderClass} ${cardDeckClass} flex items-center justify-center ${className ?? ''}`}>
         <img
+          key={`${name}-${deckTheme}`}
           src={getCardImageForDeck(name, deckTheme)}
           alt={name}
           className={imgClass}
@@ -93,6 +94,7 @@ export default function LoteriaCard({ name, marked = false, onClick, showHover =
         <span className="absolute inset-0 rounded-lg border-4 border-black opacity-0 group-hover:opacity-80 pointer-events-none transition-opacity z-10" />
       )}
       <img
+        key={`${name}-${deckTheme}`}
         src={getCardImageForDeck(name, deckTheme)}
         alt={name}
         className="absolute inset-0 w-full h-full object-cover z-0"

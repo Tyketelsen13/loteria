@@ -30,21 +30,34 @@ export function getSocket() {
     // Cross-origin configuration for Vercel + Render
     socket = io(baseUrl, {
       path: "/api/socket/io", // Keep your existing path
-      transports: ["websocket", "polling"], // Allow polling fallback
+      transports: ["polling", "websocket"], // Try polling first, then websocket
       upgrade: true, // Allow transport upgrades
       autoConnect: true,
-      timeout: 20000, // Increased timeout for Railway
+      timeout: 30000, // Increased timeout
       forceNew: false,
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5,
     });
     // Debug connection events
     socket.on("connect", () => {
-      console.log("[Socket.IO] Connected", socket?.id);
+      console.log("[Socket.IO] Connected to", baseUrl, "with ID:", socket?.id);
     });
     socket.on("disconnect", (reason: any) => {
-      console.log("[Socket.IO] Disconnected", reason);
+      console.log("[Socket.IO] Disconnected from", baseUrl, "reason:", reason);
     });
     socket.on("connect_error", (err: any) => {
-      console.error("[Socket.IO] Connection error", err);
+      console.error("[Socket.IO] Connection error to", baseUrl, "error:", err);
+      console.log("[Socket.IO] Retrying connection...");
+    });
+    socket.on("reconnect", (attemptNumber: number) => {
+      console.log("[Socket.IO] Reconnected to", baseUrl, "after", attemptNumber, "attempts");
+    });
+    socket.on("reconnect_error", (err: any) => {
+      console.error("[Socket.IO] Reconnection error to", baseUrl, "error:", err);
+    });
+    socket.on("reconnect_failed", () => {
+      console.error("[Socket.IO] Failed to reconnect to", baseUrl, "after maximum attempts");
     });
   }
   return socket;
