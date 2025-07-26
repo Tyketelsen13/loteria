@@ -284,7 +284,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       socket.disconnect();
       clearInterval(poll);
     };
-  }, [lobbyCode, user.name, players]);
+  }, [lobbyCode, user.name]); // Removed 'players' to prevent re-connection on player list changes
 
   // Send a chat message to the lobby
   function sendMessage() {
@@ -328,9 +328,29 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
     // Emit start-game event to all clients
     const socket = getSocket();
     console.log('[CLIENT] Emitting start-game event, socket connected:', socket.connected);
-    socket.emit("start-game", { boards });
-    // Set own board immediately for host
-    console.log('[CLIENT] Start game event emitted');
+    
+    // Ensure socket is connected before emitting
+    if (!socket.connected) {
+      console.log('[CLIENT] Socket not connected, attempting to connect...');
+      socket.connect();
+      // Wait a moment for connection to establish
+      await new Promise(resolve => {
+        if (socket.connected) {
+          resolve(true);
+        } else {
+          socket.once('connect', () => resolve(true));
+          setTimeout(() => resolve(false), 5000); // 5 second timeout
+        }
+      });
+    }
+    
+    if (socket.connected) {
+      socket.emit("start-game", { boards });
+      console.log('[CLIENT] Start game event emitted successfully');
+    } else {
+      console.error('[CLIENT] Failed to connect socket, cannot start game');
+      return;
+    }
   }
 
   // System card announcer using Web Speech API
