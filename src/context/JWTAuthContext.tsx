@@ -14,6 +14,7 @@ interface JWTAuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   loading: boolean;
+  getToken: () => string | null;
 }
 
 const JWTAuthContext = createContext<JWTAuthContextType | undefined>(undefined);
@@ -88,8 +89,12 @@ export function JWTAuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   };
 
+  const getToken = () => {
+    return localStorage.getItem('jwt_token');
+  };
+
   return (
-    <JWTAuthContext.Provider value={{ user, login, logout, loading }}>
+    <JWTAuthContext.Provider value={{ user, login, logout, loading, getToken }}>
       {children}
     </JWTAuthContext.Provider>
   );

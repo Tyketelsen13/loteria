@@ -344,7 +344,8 @@ app.prepare().then(() => {
       if (!game.marks[player]) {
         game.marks[player] = Array(4).fill(null).map(() => Array(4).fill(false));
       }
-      game.marks[player][row][col] = true;
+      // Toggle the mark state (same as AI game behavior)
+      game.marks[player][row][col] = !game.marks[player][row][col];
       io.to(lobbyCode).emit("mark-card", { player, row, col });
     });
 

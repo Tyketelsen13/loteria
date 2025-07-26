@@ -1,14 +1,24 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SettingsProvider, useSettings } from "@/context/SettingsContext";
 import LoteriaCard from "@/components/LoteriaCard";
 import SettingsMenu from "@/components/SettingsMenu";
-import { deckThemeOptions } from "@/lib/boardBackgrounds";
+import { deckThemeOptions, getDeckThemePreviewUrl } from "@/lib/boardBackgrounds";
 
 // Demo content component that uses settings
 function DemoContent() {
   const [selectedTheme, setSelectedTheme] = useState('traditional');
+  const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
   const { deckTheme } = useSettings();
+  
+  // Generate preview URLs on client side only
+  useEffect(() => {
+    const urls: Record<string, string> = {};
+    deckThemeOptions.forEach(theme => {
+      urls[theme.id] = getDeckThemePreviewUrl(theme.id);
+    });
+    setPreviewUrls(urls);
+  }, []);
   
   // Sample cards to demonstrate
   const sampleCards = ["El Corazón", "La Luna", "El Sol", "La Estrella"];
@@ -32,9 +42,9 @@ function DemoContent() {
                 onClick={() => setSelectedTheme(theme.id)}
               >
                 <div className="flex items-center gap-3 mb-2">
-                  {theme.preview && (
+                  {previewUrls[theme.id] && (
                     <img 
-                      src={theme.preview} 
+                      src={previewUrls[theme.id]} 
                       alt={theme.name}
                       className="w-12 h-12 object-cover rounded border"
                       onError={(e) => {

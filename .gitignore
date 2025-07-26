@@ -34,3 +34,22 @@ VERCEL_SETUP.md
 # Temporary/debug files
 AVATAR_FIXES.md
 DEPLOYMENT_STATUS.md
+
+# next.js build output
+/.next/
+/out/
+.next
+
+# backend build output  
+/backend/.next/
+backend/.next/
+
+# All .next directories
+**/.next/
+
+# Vercel build output
+.vercel
+
+# Build artifacts
+/build/
+**/build/
