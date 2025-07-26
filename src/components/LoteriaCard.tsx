@@ -2,6 +2,7 @@
 import { useSettings } from "@/context/SettingsContext";
 import { getCardDeckClass, getCardStyleClass, getDeckThemeFolder } from "@/lib/boardBackgrounds";
 import { getCardImageForDeck } from "@/lib/cardMappings";
+import { useEffect, useState } from "react";
 
 interface LoteriaCardProps {
   name: string; // Card name (e.g., "El Corazón", "La Dama")
@@ -52,6 +53,14 @@ export default function LoteriaCard({ name, marked = false, onClick, showHover =
   const cardDeckClass = getCardDeckClass(cardDeck);
   const cardStyleClass = getCardStyleClass(cardStyle);
   
+  // Use state to ensure card URL is generated on client side only
+  const [cardImageSrc, setCardImageSrc] = useState<string>('');
+  
+  useEffect(() => {
+    // Only generate the URL on the client side to ensure proper environment detection
+    setCardImageSrc(getCardImageForDeck(name, deckTheme));
+  }, [name, deckTheme]);
+  
   if (variant === "plain") {
     // Use black border and background for all decks to hide white edging on cards
     const borderClass = 'border-black bg-black';
@@ -61,7 +70,7 @@ export default function LoteriaCard({ name, marked = false, onClick, showHover =
       <div className={`w-24 h-32 rounded-lg overflow-hidden ${borderClass} ${cardDeckClass} flex items-center justify-center ${className ?? ''}`}>
         <img
           key={`${name}-${deckTheme}`}
-          src={getCardImageForDeck(name, deckTheme)}
+          src={cardImageSrc}
           alt={name}
           className={imgClass}
           onError={e => {
@@ -95,7 +104,7 @@ export default function LoteriaCard({ name, marked = false, onClick, showHover =
       )}
       <img
         key={`${name}-${deckTheme}`}
-        src={getCardImageForDeck(name, deckTheme)}
+        src={cardImageSrc}
         alt={name}
         className="absolute inset-0 w-full h-full object-cover z-0"
         onError={e => {
