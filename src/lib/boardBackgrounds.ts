@@ -580,9 +580,21 @@ export function getAvatarImageUrl(image: string | undefined): string {
     return image;
   }
 
-  // For Cloudinary images without full URL, construct the URL
-  const cloudinaryBase = 'https://res.cloudinary.com/deessrmbv/image/upload';
-  return `${cloudinaryBase}/${image}`;
+  // Handle specific avatar formats that might not have proper paths
+  if (image.includes('avatar-') && !image.startsWith('http')) {
+    // This looks like a generated avatar filename, try Cloudinary
+    const imageName = image.replace('.png', '').replace('.jpg', '').replace('.jpeg', '');
+    return `https://res.cloudinary.com/deessrmbv/image/upload/avatars/${imageName}`;
+  }
+
+  // For other Cloudinary images without full URL, construct the URL
+  if (!image.startsWith('/') && !image.includes('://')) {
+    const cloudinaryBase = 'https://res.cloudinary.com/deessrmbv/image/upload';
+    return `${cloudinaryBase}/${image}`;
+  }
+
+  // Return as-is for any other format
+  return image;
 };
 
 export const getBoardBackgroundClass = (backgroundId: string): string => {
