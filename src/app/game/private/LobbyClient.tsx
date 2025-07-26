@@ -147,6 +147,8 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
     if (!cardNames.length) return;
     let timeoutId: NodeJS.Timeout | null = null;
     let cancelled = false;
+    let isFirstCall = calledCards.length === 0;
+    
     function scheduleNext() {
       if (cancelled) return;
       timeoutId = setTimeout(() => {
@@ -158,14 +160,16 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
         socket.emit("call-card", { lobbyCode, card: next });
       }, intervalSec * 1000);
     }
+    
     // Listen for confirmation from server before scheduling next
     const socket = getSocket();
     function onCalledCard(card: string) {
       if (!cancelled) scheduleNext();
     }
     socket.on("called-card", onCalledCard);
+    
     // Start the first call immediately if no cards have been called
-    if (calledCards.length === 0) {
+    if (isFirstCall) {
       const remaining = cardNames.filter(c => !calledCards.includes(c));
       if (remaining.length > 0) {
         const next = remaining[Math.floor(Math.random() * remaining.length)];
@@ -174,13 +178,15 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
     } else {
       scheduleNext();
     }
+    
     return () => {
       cancelled = true;
       if (timeoutId) clearTimeout(timeoutId);
       socket.off("called-card", onCalledCard);
     };
+    // Removed calledCards.length from dependencies to prevent re-running on every card call
     // eslint-disable-next-line
-  }, [isHost, gameStarted, cardNames, calledCards.length, intervalSec, isPaused, winner]);
+  }, [isHost, gameStarted, cardNames, intervalSec, isPaused, winner]);
   // Listen for called card events from server and update deck from server
   useEffect(() => {
     const socket = getSocket();
@@ -668,6 +674,25 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                       </span>
                       <span className="tracking-wide">
                         {isPaused ? 'Resume' : 'Pause'}
+                      </span>
+                    </button>
+                    <button
+                      className="flex items-center gap-2 px-5 py-2 rounded-full font-semibold border-2 shadow transition-all duration-200
+                        bg-orange-600 hover:bg-orange-700 border-orange-400 text-white
+                        hover:scale-105 focus:outline-none focus:ring-2 focus:ring-orange-300"
+                      onClick={() => {
+                        if (confirm('Are you sure you want to reset the game for everyone? This will start a new round.')) {
+                          console.log('[CLIENT] Host Reset Game clicked, emitting reset-game event');
+                          const socket = getSocket();
+                          socket.emit("reset-game", { lobbyCode });
+                        }
+                      }}
+                    >
+                      <span className="text-lg">
+                        🔄
+                      </span>
+                      <span className="tracking-wide">
+                        Reset Game
                       </span>
                     </button>
                   </div>
