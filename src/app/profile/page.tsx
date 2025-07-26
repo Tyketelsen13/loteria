@@ -4,6 +4,7 @@
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useState, useRef } from "react";
+import { useJWTAuth } from "@/context/JWTAuthContext";
 
 // Helper to call AI avatar generation API route
 async function generateAIAvatar(customPrompt?: string) {
@@ -24,6 +25,7 @@ async function generateAIAvatar(customPrompt?: string) {
 export default function ProfilePage() {
   // Get user session and state for avatar upload
   const { data: session, status, update } = useSession();
+  const { user: jwtUser } = useJWTAuth();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -39,8 +41,11 @@ export default function ProfilePage() {
     );
   }
 
+  // Use either NextAuth or JWT user
+  const user = session?.user || jwtUser;
+
   // If not signed in, prompt user to sign in
-  if (!session) {
+  if (!user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
         <span className="text-lg text-gray-500 mb-4">You must be signed in to view your profile.</span>
@@ -48,8 +53,6 @@ export default function ProfilePage() {
       </div>
     );
   }
-
-  const user = session.user;
 
   // Handle avatar file upload
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
