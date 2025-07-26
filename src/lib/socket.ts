@@ -23,8 +23,10 @@ export function getSocket() {
       } else {
         baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://loteria-backend-aoiq.onrender.com';
       }
+      console.log("[Socket.IO] Connecting to baseUrl:", baseUrl, "isDevelopment:", isDevelopment);
     } else {
       baseUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3001";
+      console.log("[Socket.IO] Server-side baseUrl:", baseUrl);
     }
     
     // Cross-origin configuration for Vercel + Render
@@ -33,11 +35,12 @@ export function getSocket() {
       transports: ["polling", "websocket"], // Try polling first, then websocket
       upgrade: true, // Allow transport upgrades
       autoConnect: true,
-      timeout: 30000, // Increased timeout
+      timeout: 20000, // Reduced timeout
       forceNew: false,
       reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionAttempts: 5,
+      reconnectionDelay: 2000, // Increased delay to avoid rapid reconnects
+      reconnectionAttempts: 3, // Reduced attempts to avoid endless loops
+      randomizationFactor: 0.5, // Add randomization to reconnection delay
     });
     // Debug connection events
     socket.on("connect", () => {

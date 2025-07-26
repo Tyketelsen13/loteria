@@ -236,8 +236,8 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       if (notifications) requestNotificationPermission();
     }
     const socket = getSocket();
-    socket.connect();
-    // Join the lobby room on the server
+    
+    // Join the lobby room on the server (socket auto-connects)
     socket.emit("join-lobby", lobbyCode, user.name);
     // Listen for new players joining via socket
     socket.on("player-joined", (name: string) => {
