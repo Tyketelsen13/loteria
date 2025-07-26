@@ -10,7 +10,10 @@ let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
 // Skip validation during build time or when SKIP_DB_VALIDATION is set
-const skipValidation = process.env.SKIP_DB_VALIDATION === "true" || process.env.NODE_ENV === "production";
+const skipValidation = process.env.SKIP_DB_VALIDATION === "true" || 
+                      process.env.NODE_ENV === "production" ||
+                      process.env.VERCEL_ENV === "preview" ||
+                      process.env.VERCEL_ENV === "production";
 
 // Validate environment variable exists (skip during build)
 if (!process.env.MONGODB_URI && !skipValidation) {
