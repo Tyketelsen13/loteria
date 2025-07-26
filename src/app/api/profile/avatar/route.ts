@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/lib/auth";
 import clientPromise from "@/lib/mongodb";
 import { generateImagineArtCard } from "@/lib/imagineArt";
+import { cloudinary } from "@/lib/cloudinary";
 import fs from "fs";
 import path from "path";
 
@@ -79,21 +80,42 @@ export async function POST(request: NextRequest) {
           let imageUrl = null;
 
           if (response.ok) {
-            // Save the image to a temporary location
+            // Upload the image to Cloudinary instead of saving locally
             const imageBuffer = await response.arrayBuffer();
-            const fileName = `avatar-${user.email.replace('@', '-').replace('.', '-')}-${Date.now()}.png`;
-            const filePath = path.join(process.cwd(), "public", "avatars", fileName);
+            const fileName = `avatar-${user.email.replace('@', '-').replace('.', '-')}-${Date.now()}`;
             
-            // Create avatars directory if it doesn't exist
-            const avatarsDir = path.join(process.cwd(), "public", "avatars");
-            if (!fs.existsSync(avatarsDir)) {
-              fs.mkdirSync(avatarsDir, { recursive: true });
+            try {
+              // Upload to Cloudinary
+              const uploadResponse = await new Promise((resolve, reject) => {
+                cloudinary.uploader.upload_stream(
+                  {
+                    public_id: fileName,
+                    folder: 'avatars',
+                    resource_type: 'image',
+                    format: 'png',
+                    overwrite: true,
+                  },
+                  (error, result) => {
+                    if (error) reject(error);
+                    else resolve(result);
+                  }
+                ).end(Buffer.from(imageBuffer));
+              });
+              
+              imageUrl = (uploadResponse as any).secure_url;
+              console.log("ImagineArt API success: Uploaded avatar to Cloudinary:", imageUrl);
+            } catch (cloudinaryError) {
+              console.error("Cloudinary upload error:", cloudinaryError);
+              // Fallback: save locally for development
+              const localPath = path.join(process.cwd(), "public", "avatars", `${fileName}.png`);
+              const avatarsDir = path.join(process.cwd(), "public", "avatars");
+              if (!fs.existsSync(avatarsDir)) {
+                fs.mkdirSync(avatarsDir, { recursive: true });
+              }
+              fs.writeFileSync(localPath, Buffer.from(imageBuffer));
+              imageUrl = `/avatars/${fileName}.png`;
+              console.log("Cloudinary failed, saved locally:", imageUrl);
             }
-            
-            // Save the image
-            fs.writeFileSync(filePath, Buffer.from(imageBuffer));
-            imageUrl = `/avatars/${fileName}`;
-            console.log("ImagineArt API success: Saved avatar to", imageUrl);
           } else {
             const errorText = await response.text();
             console.error("ImagineArt API error:", response.status, errorText);
@@ -138,9 +160,66 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "No file provided" }, { status: 400 });
       }
 
-      // Here you would typically upload to a cloud storage service
-      // For now, we'll just return success
-      return NextResponse.json({ success: true });
+      try {
+        // Convert file to buffer
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        
+        // Generate filename
+        const fileName = `avatar-${user.email.replace('@', '-').replace('.', '-')}-${Date.now()}`;
+        
+        let imageUrl = null;
+        
+        try {
+          // Upload to Cloudinary
+          const uploadResponse = await new Promise((resolve, reject) => {
+            cloudinary.uploader.upload_stream(
+              {
+                public_id: fileName,
+                folder: 'avatars',
+                resource_type: 'image',
+                overwrite: true,
+              },
+              (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+              }
+            ).end(buffer);
+          });
+          
+          imageUrl = (uploadResponse as any).secure_url;
+          console.log("File upload success: Uploaded avatar to Cloudinary:", imageUrl);
+        } catch (cloudinaryError) {
+          console.error("Cloudinary upload error:", cloudinaryError);
+          // Fallback: save locally for development
+          const localPath = path.join(process.cwd(), "public", "avatars", `${fileName}.${file.name.split('.').pop()}`);
+          const avatarsDir = path.join(process.cwd(), "public", "avatars");
+          if (!fs.existsSync(avatarsDir)) {
+            fs.mkdirSync(avatarsDir, { recursive: true });
+          }
+          fs.writeFileSync(localPath, buffer);
+          imageUrl = `/avatars/${fileName}.${file.name.split('.').pop()}`;
+          console.log("Cloudinary failed, saved locally:", imageUrl);
+        }
+        
+        if (!imageUrl) {
+          return NextResponse.json({ error: "Failed to upload avatar" }, { status: 500 });
+        }
+
+        // Update user's avatar in database
+        const client = await clientPromise;
+        const db = client.db(process.env.MONGODB_DB);
+        
+        await db.collection("users").updateOne(
+          { email: user.email },
+          { $set: { image: imageUrl } }
+        );
+
+        return NextResponse.json({ success: true, imageUrl });
+      } catch (error) {
+        console.error("File upload error:", error);
+        return NextResponse.json({ error: "Failed to upload avatar" }, { status: 500 });
+      }
     }
 
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });

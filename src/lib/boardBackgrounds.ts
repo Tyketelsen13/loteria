@@ -560,21 +560,27 @@ export const getDeckThemePreviewUrl = (themeId: string): string => {
 export const getAvatarImageUrl = (imagePath: string): string => {
   if (!imagePath) return '';
   
-  // If it's already a full URL (like ui-avatars.com), return as-is
+  // If it's already a full URL (like ui-avatars.com or Cloudinary), return as-is
   if (imagePath.startsWith('http')) {
     return imagePath;
   }
   
-  // Only apply Cloudinary transformation on client-side in production
-  if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
-    if (imagePath.startsWith('/avatars/')) {
-      // In production, convert local avatar path to Cloudinary URL
-      const imageName = imagePath.split('/').pop(); // Get filename from path
-      return `https://res.cloudinary.com/deessrmbv/image/upload/v1/${imageName}`;
+  // Handle local avatar paths - only in development
+  if (imagePath.startsWith('/avatars/')) {
+    // In production (Vercel), avatars should be stored in Cloudinary
+    // This case should only happen in development or for old data
+    if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
+      // Try to construct Cloudinary URL, but this might not work for old local files
+      const imageName = imagePath.split('/').pop()?.replace('.png', '').replace('.jpg', ''); 
+      if (imageName) {
+        return `https://res.cloudinary.com/deessrmbv/image/upload/avatars/${imageName}`;
+      }
     }
+    // For development, return the local path
+    return imagePath;
   }
   
-  return imagePath; // Use local path in development or if not an avatar path
+  return imagePath; // Return as-is for any other format
 };
 
 export const getBoardBackgroundClass = (backgroundId: string): string => {

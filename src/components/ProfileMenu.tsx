@@ -59,6 +59,7 @@ export default function ProfileMenu() {
               const userName = user?.name || user?.email || 'Player';
               const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&size=32&background=b89c3a&color=ffffff&font-size=0.33&format=png`;
               if (target.src !== fallbackUrl) {
+                console.log('Avatar failed to load, using fallback:', target.src);
                 target.src = fallbackUrl;
               }
             }}
