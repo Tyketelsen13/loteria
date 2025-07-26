@@ -294,6 +294,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
   }
 
   async function handleStartGame() {
+    console.log('[CLIENT] Starting game with lobbyCode:', lobbyCode);
     // If a previous game ended, clear winner state before starting a new game
     setWinner(null);
     setGameStarted(false);
@@ -315,16 +316,21 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
         fullPlayers.push(aiDisplay);
       }
     }
+    console.log('[CLIENT] Full players list:', fullPlayers);
     // Fetch all card names and generate a random board for each player
     const cardNames = await fetchCardNames(deckTheme);
+    console.log('[CLIENT] Fetched card names:', cardNames.length, 'cards');
     const boards: { [name: string]: string[][] } = {};
     for (const p of fullPlayers) {
       boards[p] = generateBoardFrom(cardNames);
     }
+    console.log('[CLIENT] Generated boards for players:', Object.keys(boards));
     // Emit start-game event to all clients
     const socket = getSocket();
+    console.log('[CLIENT] Emitting start-game event, socket connected:', socket.connected);
     socket.emit("start-game", { boards });
     // Set own board immediately for host
+    console.log('[CLIENT] Start game event emitted');
   }
 
   // System card announcer using Web Speech API
