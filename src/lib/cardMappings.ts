@@ -155,33 +155,45 @@ export function getCardImageForDeck(cardName: string, deckThemeId: string): stri
   if (useCloudinary) {
     const baseUrl = `https://res.cloudinary.com/${cloudName}/image/upload/f_auto,q_auto/loteria-cards`;
     
+    let finalUrl = '';
     switch (deckThemeId) {
       case 'cute-adorable':
         if (mapping?.cuteAdorable) {
-          return `${baseUrl}/68796740a83d8baf97ca977a/${mapping.cuteAdorable.replace('.png', '')}`;
+          finalUrl = `${baseUrl}/68796740a83d8baf97ca977a/${mapping.cuteAdorable.replace('.png', '')}`;
+        } else {
+          finalUrl = `${baseUrl}/cards/${standardFilename}`;
         }
-        return `${baseUrl}/cards/${standardFilename}`;
+        break;
         
       case 'dark-mysterious':
         if (mapping?.darkMysterious) {
-          return `${baseUrl}/68796740a83d8baf97ca977a/${mapping.darkMysterious.replace('.png', '')}`;
+          finalUrl = `${baseUrl}/68796740a83d8baf97ca977a/${mapping.darkMysterious.replace('.png', '')}`;
+        } else {
+          finalUrl = `${baseUrl}/cards/${standardFilename}`;
         }
-        return `${baseUrl}/cards/${standardFilename}`;
+        break;
         
       case 'horror':
-        return `${baseUrl}/horror-theme/${standardFilename}-horror`;
+        finalUrl = `${baseUrl}/horror-theme/${standardFilename}-horror`;
+        break;
         
       case 'fantasy':
         if (mapping?.fantasy) {
-          return `${baseUrl}/fantasy-theme/${mapping.fantasy.replace('.png', '')}`;
+          finalUrl = `${baseUrl}/fantasy-theme/${mapping.fantasy.replace('.png', '')}`;
+        } else {
+          finalUrl = `${baseUrl}/fantasy-theme/${standardFilename}-fantasy`;
         }
-        return `${baseUrl}/fantasy-theme/${standardFilename}-fantasy`;
+        break;
         
       case 'traditional':
       default:
         // Traditional cards stay local - not uploaded to Cloudinary
-        return `/cards/${standardFilename}.png`;
+        finalUrl = `/cards/${standardFilename}.png`;
+        break;
     }
+    
+    console.log(`[cardMappings] Cloudinary URL generated: ${finalUrl}`);
+    return finalUrl;
   }
   
   // Local development - use local files
