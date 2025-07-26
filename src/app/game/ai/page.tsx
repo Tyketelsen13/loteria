@@ -332,7 +332,7 @@ export default function AIGamePage() {
                 style={{ fontSize: '16px' }}
                 disabled={started}
               />
-              <span className="ml-2 text-base text-[#3b2c1a] dark:text-gray-200 font-semibold bg-[#e1b866]/60 dark:bg-yellow-900/60 px-3 py-1 rounded-lg border border-[#b89c3a] dark:border-yellow-700 shadow-sm transition-colors">Total players: <span className="text-[#8c2f2b] dark:text-yellow-200 font-bold">{pendingNumBots + 1}</span></span>
+              <span className="ml-2 text-base text-[#3b2c1a] dark:text-gray-200 font-semibold bg-[#e1b866]/60 dark:bg-yellow-900/60 px-3 py-1 rounded-lg border border-[#b89c3a] dark:border-yellow-700 shadow-sm transition-colors">Total players: <span className="text-blue-600 dark:text-blue-400 font-bold">{pendingNumBots + 1}</span></span>
             </div>
           </div>
           <div className="flex flex-col items-center sm:items-end flex-1 mt-4 sm:mt-0 w-full">
@@ -364,7 +364,7 @@ export default function AIGamePage() {
         <div className="flex flex-row gap-10 items-start justify-center w-full">
           {/* Left: User Board */}
           <div className="flex flex-col items-center w-full max-w-md">
-            <h2 className="font-semibold mb-2 text-[#8c2f2b] dark:text-yellow-200 transition-colors">Your Board</h2>
+            <h2 className="font-western text-xl font-bold mb-2 text-white bg-[#8c2f2b] px-4 py-2 rounded-xl border-2 border-[#b89c3a] shadow-lg tracking-wider text-center transition-colors">Your Board</h2>
             {userBoard && (
               <div
                 className="p-4 rounded-2xl shadow-2xl w-full border-2 border-[#b89c3a]"
@@ -412,7 +412,7 @@ export default function AIGamePage() {
             </button>
             {showAIBoards && (
               <div className="w-full mt-4">
-                <h2 className="font-semibold mb-2 text-center">AI Bots ({numBots})</h2>
+                <h2 className="font-western text-xl font-bold mb-2 text-white bg-[#8c2f2b] px-4 py-2 rounded-xl border-2 border-[#b89c3a] shadow-lg tracking-wider text-center transition-colors">AI Bots ({numBots})</h2>
                 <div className="flex flex-col items-center gap-10">
                   {aiBoards.map((board, idx) => (
                     <div
@@ -425,7 +425,7 @@ export default function AIGamePage() {
                         filter: "brightness(0.93)"
                       }}
                     >
-                      <div className="font-western text-lg font-bold mb-3 text-blue-400 px-4 py-1 rounded-xl border border-[#b89c3a] bg-[#8c2f2b] shadow-lg tracking-wider text-center w-full" style={{letterSpacing: '0.08em'}}>
+                      <div className="font-western text-lg font-bold mb-3 text-white bg-blue-600 px-4 py-2 rounded-xl border-2 border-blue-500 shadow-xl tracking-wider text-center w-full transform hover:scale-105 transition-all duration-200" style={{letterSpacing: '0.08em'}}>
                         {botNames[idx]}
                       </div>
                       <LoteriaBoard
