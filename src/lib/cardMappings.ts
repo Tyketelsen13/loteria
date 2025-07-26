@@ -141,16 +141,6 @@ export function getCardImageForDeck(cardName: string, deckThemeId: string): stri
   // Force Cloudinary for any Vercel deployment
   const useCloudinary = isVercelProduction;
   
-  // Debug logging (remove after testing)
-  console.log('[cardMappings] Environment check:', {
-    cardName,
-    deckThemeId,
-    cloudName,
-    isVercelProduction,
-    isProductionBuild,
-    useCloudinary,
-    hostname: window.location.hostname
-  });
   
   if (useCloudinary) {
     const baseUrl = `https://res.cloudinary.com/${cloudName}/image/upload/f_auto,q_auto/loteria-cards`;
@@ -159,29 +149,29 @@ export function getCardImageForDeck(cardName: string, deckThemeId: string): stri
     switch (deckThemeId) {
       case 'cute-adorable':
         if (mapping?.cuteAdorable) {
-          finalUrl = `${baseUrl}/68796740a83d8baf97ca977a/${mapping.cuteAdorable.replace('.png', '')}`;
+          finalUrl = `${baseUrl}/68796740a83d8baf97ca977a/${mapping.cuteAdorable.replace('.png', '')}.png`;
         } else {
-          finalUrl = `${baseUrl}/cards/${standardFilename}`;
+          finalUrl = `${baseUrl}/cards/${standardFilename}.png`;
         }
         break;
         
       case 'dark-mysterious':
         if (mapping?.darkMysterious) {
-          finalUrl = `${baseUrl}/68796740a83d8baf97ca977a/${mapping.darkMysterious.replace('.png', '')}`;
+          finalUrl = `${baseUrl}/68796740a83d8baf97ca977a/${mapping.darkMysterious.replace('.png', '')}.png`;
         } else {
-          finalUrl = `${baseUrl}/cards/${standardFilename}`;
+          finalUrl = `${baseUrl}/cards/${standardFilename}.png`;
         }
         break;
         
       case 'horror':
-        finalUrl = `${baseUrl}/horror-theme/${standardFilename}-horror`;
+        finalUrl = `${baseUrl}/horror-theme/${standardFilename}-horror.png`;
         break;
         
       case 'fantasy':
         if (mapping?.fantasy) {
-          finalUrl = `${baseUrl}/fantasy-theme/${mapping.fantasy.replace('.png', '')}`;
+          finalUrl = `${baseUrl}/fantasy-theme/${mapping.fantasy.replace('.png', '')}.png`;
         } else {
-          finalUrl = `${baseUrl}/fantasy-theme/${standardFilename}-fantasy`;
+          finalUrl = `${baseUrl}/fantasy-theme/${standardFilename}-fantasy.png`;
         }
         break;
         
@@ -192,7 +182,6 @@ export function getCardImageForDeck(cardName: string, deckThemeId: string): stri
         break;
     }
     
-    console.log(`[cardMappings] Cloudinary URL generated: ${finalUrl}`);
     return finalUrl;
   }
   
