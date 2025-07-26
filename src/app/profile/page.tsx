@@ -3,34 +3,52 @@
 // Allows users to view and update their profile and avatar
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useJWTAuth } from "@/context/JWTAuthContext";
+import { getAvatarImageUrl } from "@/lib/boardBackgrounds";
 
 // Helper to call AI avatar generation API route
-async function generateAIAvatar(customPrompt?: string) {
-  const res = await fetch("/api/profile/avatar", { 
+async function generateAIAvatar(customPrompt?: string, token?: string) {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json"
+  };
+  
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const res = await fetch("/api/profile/avatar", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ 
+    headers,
+    body: JSON.stringify({
       generateAI: true,
-      customPrompt: customPrompt 
+      customPrompt: customPrompt
     })
   });
   if (!res.ok) {
     throw new Error("Failed to generate AI avatar");
   }
   return res.json();
-}
-
-export default function ProfilePage() {
+}export default function ProfilePage() {
   // Get user session and state for avatar upload
   const { data: session, status, update } = useSession();
-  const { user: jwtUser } = useJWTAuth();
+  const { user: jwtUser, getToken } = useJWTAuth();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [customPrompt, setCustomPrompt] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Use either NextAuth or JWT user
+  const user = session?.user || jwtUser;
+
+  // Generate avatar URL client-side to avoid SSR mismatches
+  useEffect(() => {
+    if (user?.image) {
+      setAvatarUrl(getAvatarImageUrl(user.image));
+    }
+  }, [user?.image]);
 
   // Show loading spinner while session is loading
   if (status === "loading") {
@@ -40,9 +58,6 @@ export default function ProfilePage() {
       </div>
     );
   }
-
-  // Use either NextAuth or JWT user
-  const user = session?.user || jwtUser;
 
   // If not signed in, prompt user to sign in
   if (!user) {
@@ -67,8 +82,16 @@ export default function ProfilePage() {
     setUploading(true);
     const formData = new FormData();
     formData.append("avatar", file);
+    
+    const headers: Record<string, string> = {};
+    const token = getToken();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    
     const res = await fetch("/api/profile/avatar", {
       method: "POST",
+      headers,
       body: formData,
     });
     setUploading(false);
@@ -85,7 +108,8 @@ export default function ProfilePage() {
     setSuccess("");
     setUploading(true);
     try {
-      const response = await generateAIAvatar(customPrompt.trim() || undefined);
+      const token = getToken();
+      const response = await generateAIAvatar(customPrompt.trim() || undefined, token || undefined);
       if (response.success) {
         setSuccess("🎨 New AI avatar generated successfully!");
         setCustomPrompt(""); // Clear the input after successful generation
@@ -112,7 +136,7 @@ export default function ProfilePage() {
         <div className="flex flex-col items-center gap-2">
           <div className="relative group">
             <img
-              src={user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || user?.email || 'Player')}&size=80&background=b89c3a&color=ffffff&font-size=0.33&format=png`}
+              src={avatarUrl || user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || user?.email || 'Player')}&size=80&background=b89c3a&color=ffffff&font-size=0.33&format=png`}
               alt="Profile"
               width={80}
               height={80}

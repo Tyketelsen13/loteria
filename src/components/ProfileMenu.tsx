@@ -1,20 +1,29 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { useJWTAuth } from "../context/JWTAuthContext";
 import { useRouter } from "next/navigation";
+import { getAvatarImageUrl } from "../lib/boardBackgrounds";
 
 /**
  * User profile dropdown menu with avatar and sign-out option
  */
 export default function ProfileMenu() {
   const [open, setOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string>('');
   const { data: session } = useSession();
   const { user: jwtUser, logout: jwtLogout } = useJWTAuth();
   const router = useRouter();
   
   // Use either NextAuth or JWT user
   const user = session?.user || jwtUser;
+
+  // Generate avatar URL client-side to avoid SSR mismatches
+  useEffect(() => {
+    if (user?.image) {
+      setAvatarUrl(getAvatarImageUrl(user.image));
+    }
+  }, [user?.image]);
   
   const handleLogout = () => {
     if (session) {
@@ -39,7 +48,7 @@ export default function ProfileMenu() {
       >
         {user?.image ? (
           <img
-            src={user.image}
+            src={avatarUrl || user.image}
             alt="Profile"
             width={32}
             height={32}

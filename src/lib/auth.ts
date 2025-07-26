@@ -1,4 +1,5 @@
 import { NextAuthOptions } from "next-auth";
+import { getServerSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { MongoDBAdapter } from "@next-auth/mongodb-adapter";
 import clientPromise from "./mongodb";
@@ -88,3 +89,52 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   debug: true, // Enable debug logging
 };
+
+// Helper function to get authenticated user from either NextAuth session or JWT token
+export async function getAuthenticatedUser(request: Request) {
+  try {
+    // First try NextAuth session (works in Vercel serverless functions)
+    const session = await getServerSession(authOptions);
+    if (session?.user?.email) {
+      return {
+        email: session.user.email,
+        name: session.user.name,
+        image: session.user.image,
+        source: 'nextauth'
+      };
+    }
+
+    // If no NextAuth session, try JWT token from Authorization header
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      
+      // Ensure we have the JWT secret (required for Vercel deployment)
+      if (!process.env.NEXTAUTH_SECRET) {
+        console.error('NEXTAUTH_SECRET environment variable is required for JWT verification');
+        return null;
+      }
+      
+      const jwt = await import('jsonwebtoken');
+      
+      try {
+        const decoded = jwt.verify(token, process.env.NEXTAUTH_SECRET) as any;
+        if (decoded?.email) {
+          return {
+            email: decoded.email,
+            name: decoded.name,
+            image: decoded.image,
+            source: 'jwt'
+          };
+        }
+      } catch (jwtError) {
+        console.log('JWT verification failed:', jwtError);
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Authentication error:', error);
+    return null;
+  }
+}

@@ -531,6 +531,52 @@ export const deckThemeOptions: DeckThemeOption[] = [
   }
 ];
 
+// Helper function to get preview image URL for deck themes (client-side only)
+export const getDeckThemePreviewUrl = (themeId: string): string => {
+  const theme = deckThemeOptions.find(opt => opt.id === themeId);
+  if (!theme?.preview) return '';
+  
+  // Only apply Cloudinary transformation on client-side in production
+  if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
+    switch (themeId) {
+      case 'cute-adorable':
+        return 'https://res.cloudinary.com/deessrmbv/image/upload/68796740a83d8baf97ca977a/large-cute-and-adorable-mexican-loteria-deck-item-1-1752794219242.png';
+      case 'dark-mysterious':
+        return 'https://res.cloudinary.com/deessrmbv/image/upload/68796740a83d8baf97ca977a/large-evil-and-dark-themed-objects-item-1-1752790851683.png';
+      case 'horror':
+        return 'https://res.cloudinary.com/deessrmbv/image/upload/horror-theme/el-corazon-horror.png';
+      case 'fantasy':
+        return 'https://res.cloudinary.com/deessrmbv/image/upload/fantasy-theme/el-corazon-fantasy.png';
+      default:
+        return theme.preview;
+    }
+  }
+  
+  // Local development or non-Vercel environments use local files
+  return theme.preview;
+};
+
+// Helper function to get avatar image URL (client-side only)
+export const getAvatarImageUrl = (imagePath: string): string => {
+  if (!imagePath) return '';
+  
+  // If it's already a full URL (like ui-avatars.com), return as-is
+  if (imagePath.startsWith('http')) {
+    return imagePath;
+  }
+  
+  // Only apply Cloudinary transformation on client-side in production
+  if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
+    if (imagePath.startsWith('/avatars/')) {
+      // In production, convert local avatar path to Cloudinary URL
+      const imageName = imagePath.split('/').pop(); // Get filename from path
+      return `https://res.cloudinary.com/deessrmbv/image/upload/v1/${imageName}`;
+    }
+  }
+  
+  return imagePath; // Use local path in development or if not an avatar path
+};
+
 export const getBoardBackgroundClass = (backgroundId: string): string => {
   const background = backgroundOptions.find(opt => opt.id === backgroundId);
   return background?.className || 'bg-gray-100';

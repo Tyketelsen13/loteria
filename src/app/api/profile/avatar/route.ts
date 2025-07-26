@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getAuthenticatedUser } from "@/lib/auth";
 import clientPromise from "@/lib/mongodb";
 import { generateImagineArtCard } from "@/lib/imagineArt";
 import fs from "fs";
@@ -22,9 +21,9 @@ function getAdminSettings() {
 }
 
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const user = await getAuthenticatedUser(request);
   
-  if (!session?.user?.email) {
+  if (!user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -82,7 +81,7 @@ export async function POST(request: NextRequest) {
           if (response.ok) {
             // Save the image to a temporary location
             const imageBuffer = await response.arrayBuffer();
-            const fileName = `avatar-${session.user.email.replace('@', '-').replace('.', '-')}-${Date.now()}.png`;
+            const fileName = `avatar-${user.email.replace('@', '-').replace('.', '-')}-${Date.now()}.png`;
             const filePath = path.join(process.cwd(), "public", "avatars", fileName);
             
             // Create avatars directory if it doesn't exist
@@ -118,7 +117,7 @@ export async function POST(request: NextRequest) {
           const db = client.db(process.env.MONGODB_DB);
           
           await db.collection("users").updateOne(
-            { email: session.user.email },
+            { email: user.email },
             { $set: { image: imageUrl } }
           );
 
