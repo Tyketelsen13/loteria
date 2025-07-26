@@ -34,9 +34,8 @@ export function JWTAuthProvider({ children }: { children: React.ReactNode }) {
 
   const verifyToken = async (token: string) => {
     try {
-      // Use backend URL directly since API rewrites may not be configured
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://loteria-backend-aoiq.onrender.com';
-      const response = await fetch(`${backendUrl}/api/auth/jwt-verify`, {
+      // Use frontend API route for JWT verification in split deployment
+      const response = await fetch(`/api/auth/jwt-verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
