@@ -6,10 +6,8 @@ import clientPromise from "./mongodb";
 import bcrypt from "bcrypt";
 
 // Skip database operations during build time
-const skipDB = process.env.SKIP_DB_VALIDATION === "true" || 
-              process.env.VERCEL_ENV === "preview" ||
-              process.env.VERCEL_ENV === "production" ||
-              !process.env.MONGODB_URI;
+const skipDB = process.env.SKIP_DB_VALIDATION === "true" && 
+              (process.env.VERCEL_ENV === "preview" || process.env.NODE_ENV !== "production");
 
 export const authOptions: NextAuthOptions = {
   adapter: skipDB ? undefined : MongoDBAdapter(clientPromise),

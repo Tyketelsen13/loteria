@@ -1,21 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/lib/auth';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 import { generateImagineArtCard } from '@/lib/imagineArt';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
-  const user = await getAuthenticatedUser(req);
-
-  if (!user?.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const client = await clientPromise;
-  const db = client.db(process.env.MONGODB_DB);
-
   try {
+    // Get session directly in the API route
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const client = await clientPromise;
+    const db = client.db(process.env.MONGODB_DB);
+
     const contentType = req.headers.get('content-type');
     
     if (contentType?.includes('multipart/form-data')) {
@@ -29,11 +31,11 @@ export async function POST(req: NextRequest) {
 
       // For now, we'll just generate a random avatar since file upload to cloud storage would require additional setup
       // In a real implementation, you'd upload to Cloudinary or another service
-      const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || user.email || 'Player')}&size=200&background=b89c3a&color=ffffff&font-size=0.33&format=png&seed=${Date.now()}`;
+      const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(session.user.name || session.user.email || 'Player')}&size=200&background=b89c3a&color=ffffff&font-size=0.33&format=png&seed=${Date.now()}`;
       
       // Update user's avatar in database
       await db.collection('users').updateOne(
-        { email: user.email },
+        { email: session.user.email },
         { $set: { image: avatarUrl } }
       );
 
@@ -62,12 +64,12 @@ export async function POST(req: NextRequest) {
       
       // Fallback to ui-avatars if AI generation fails
       if (!avatarUrl) {
-        avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || user.email || 'Player')}&size=200&background=b89c3a&color=ffffff&font-size=0.33&format=png&seed=${Date.now()}`;
+        avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(session.user.name || session.user.email || 'Player')}&size=200&background=b89c3a&color=ffffff&font-size=0.33&format=png&seed=${Date.now()}`;
       }
 
       // Update user's avatar in database
       await db.collection('users').updateOne(
-        { email: user.email },
+        { email: session.user.email },
         { $set: { image: avatarUrl } }
       );
 
