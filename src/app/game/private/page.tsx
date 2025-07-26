@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import LobbyClient from "./LobbyClient";
 import UserInfo from "../../../components/UserInfo";
 
@@ -9,12 +10,54 @@ function generateCode() {
 }
 
 export default function PrivateLobbyPage() {
+  const searchParams = useSearchParams();
+  
   // State for lobby code, join code, join status, and user name
   const [lobbyCode, setLobbyCode] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [joined, setJoined] = useState(false);
   const [userName, setUserName] = useState("");
   const [pendingName, setPendingName] = useState("");
+
+  // Check for code in URL parameters and auto-join if present
+  useEffect(() => {
+    if (!searchParams) return;
+    const urlCode = searchParams.get('code');
+    if (urlCode && userName && !joined) {
+      // Auto-join if code is provided in URL
+      autoJoinLobby(urlCode.toUpperCase());
+    }
+  }, [userName, joined, searchParams]);
+
+  // Auto-join function for URL-provided codes
+  async function autoJoinLobby(code: string) {
+    try {
+      // Fetch all lobbies to find the one matching the code
+      const res = await fetch(`/api/lobbies`);
+      let lobbies = [];
+      try {
+        if (res.ok) {
+          lobbies = await res.json();
+        }
+      } catch (err) {
+        lobbies = [];
+      }
+      // Find the lobby and update the player list
+      const lobby = Array.isArray(lobbies) ? lobbies.find((l: any) => l.code === code) : null;
+      let players = lobby && Array.isArray(lobby.players) ? lobby.players : [];
+      if (!players.includes(userName)) players = [...players, userName];
+      await fetch("/api/lobbies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, players }),
+      });
+      setLobbyCode(code);
+      setJoined(true);
+    } catch (error) {
+      console.error('Error auto-joining lobby:', error);
+      // If auto-join fails, user can still manually enter code
+    }
+  }
 
   // Create a new lobby and add the user as the first player
   async function handleCreateLobby() {

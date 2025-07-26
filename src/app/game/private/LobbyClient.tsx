@@ -275,6 +275,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
         console.warn('[CLIENT] No deck in payload, using fallback unique cards:', unique);
       }
       setShowBoard(true);
+      setGameStarted(true); // Start the game for all players
     });
     // Poll for player list from DB every 2 seconds for real-time updates
     const poll = setInterval(async () => {
@@ -504,15 +505,6 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
             {/* Left: Board Area */}
             <div className="flex flex-col items-center w-full max-w-md">
               <div className="font-semibold mb-2 text-[#8c2f2b] dark:text-yellow-200 transition-colors">Your Board</div>
-              {/* Start Game button for host if game not started (board exists but no called cards yet) */}
-              {isHost && board && !gameStarted && (
-                <button
-                  className="mb-4 px-6 py-2 bg-gradient-to-b from-[#e1b866] to-[#b89c3a] text-[#8c2f2b] font-western text-lg rounded-xl border-2 border-[#8c2f2b] shadow-lg hover:from-[#ffe7a0] hover:to-[#e1b866] hover:text-[#6a1a1a] transition-all duration-150"
-                  onClick={() => setGameStarted(true)}
-                >
-                  Start Game
-                </button>
-              )}
               {board && (
                 <div
                   className="p-4 rounded-2xl shadow-2xl w-full border-2 border-[#b89c3a]"
