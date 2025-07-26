@@ -20,8 +20,7 @@ export default function NextAuthSessionProvider({
 }) {
   return (
     <SessionProvider 
-      basePath={process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/api/auth` : "/api/auth"}
-      refetchInterval={5}
+      refetchInterval={60}
       refetchOnWindowFocus={true}
       refetchWhenOffline={false}
     >

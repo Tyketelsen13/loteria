@@ -36,6 +36,9 @@ export default function ProfilePage() {
   };
 
   useEffect(() => {
+    console.log('Profile page - Session status:', status);
+    console.log('Profile page - Session data:', session);
+    
     if (status === 'authenticated') {
       fetchProfile();
     }
@@ -43,15 +46,17 @@ export default function ProfilePage() {
 
   // Show loading while checking authentication
   if (status === 'loading') {
-    return <div className="p-6">Loading...</div>;
+    return <div className="p-6">Loading authentication...</div>;
   }
 
   // Redirect to sign in if not authenticated
   if (status === 'unauthenticated') {
+    console.log('Profile page - User not authenticated, showing sign in prompt');
     return (
       <div className="p-6 max-w-xl mx-auto text-center">
         <h2 className="text-2xl font-bold mb-4">Please Sign In</h2>
         <p className="text-gray-600 mb-4">You need to be signed in to view your profile.</p>
+        <p className="text-sm text-gray-500 mb-4">Session status: {status}</p>
         <button
           onClick={() => signIn()}
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
