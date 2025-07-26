@@ -21,7 +21,7 @@ export default function LoteriaBoard({ board, marks = [], onMark, markable }: Lo
   const themeClass = getBoardThemeClass(boardTheme);
   
   return (
-    <div className={`grid grid-cols-4 gap-0 p-4 rounded-lg ${backgroundClass} ${themeClass}`}>
+    <div className={`grid grid-cols-4 gap-0 p-4 rounded-lg ios-transform-gpu ios-smooth ${backgroundClass} ${themeClass}`}>
       {board.map((row, i) =>
         row.map((cell, j) => (
           <LoteriaCard
@@ -30,6 +30,7 @@ export default function LoteriaBoard({ board, marks = [], onMark, markable }: Lo
             marked={!!marks?.[i]?.[j]}
             onClick={onMark ? () => onMark(i, j) : undefined}
             markable={markable ? markable(i, j) : undefined}
+            className="touch-manipulation"
           />
         ))
       )}

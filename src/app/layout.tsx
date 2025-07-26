@@ -38,7 +38,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <head>
+        {/* iOS-specific meta tags for better mobile experience */}
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="mobile-web-app-capable" content="yes" />
+      </head>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased ios-smooth ios-no-select`}>
         {/* Prevent dark mode flash by setting theme before React hydration */}
         <script
           dangerouslySetInnerHTML={{
@@ -62,7 +70,9 @@ export default function RootLayout({
           <SettingsMenu />
           <JWTAuthProvider>
             <NextAuthSessionProvider>
-              {children}
+              <div className="main-content min-h-screen-ios">
+                {children}
+              </div>
             </NextAuthSessionProvider>
           </JWTAuthProvider>
         </SettingsProvider>

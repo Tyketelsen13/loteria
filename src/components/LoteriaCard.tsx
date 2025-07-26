@@ -67,7 +67,7 @@ export default function LoteriaCard({ name, marked = false, onClick, showHover =
     const imgClass = 'w-full h-full object-cover';
     
     return (
-      <div className={`w-24 h-32 rounded-lg overflow-hidden ${borderClass} ${cardDeckClass} flex items-center justify-center ${className ?? ''}`}>
+      <div className={`w-24 h-32 rounded-lg overflow-hidden ${borderClass} ${cardDeckClass} flex items-center justify-center ios-transform-gpu ios-smooth ${className ?? ''}`}>
         <img
           key={`${name}-${deckTheme}`}
           src={cardImageSrc}
@@ -87,12 +87,13 @@ export default function LoteriaCard({ name, marked = false, onClick, showHover =
   }
   return (
     <button
-      className={`w-24 h-32 flex items-center justify-center rounded-lg border text-center font-semibold text-xs p-0 overflow-hidden relative transition select-none ${cardStyleClass}${marked ? " ring-2 ring-green-500" : ""}${showHover ? " group" : ""} ${className ?? ''}`}
+      className={`w-24 h-32 flex items-center justify-center rounded-lg border text-center font-semibold text-xs p-0 overflow-hidden relative transition select-none min-h-touch min-w-touch touch-manipulation ios-tap-transparent ios-no-callout ios-smooth ios-transform-gpu ${cardStyleClass}${marked ? " ring-2 ring-green-500" : ""}${showHover ? " group" : ""} ${className ?? ''}`}
       onClick={onClick}
       style={{
         position: 'relative',
         cursor: markable ? 'pointer' : 'not-allowed',
-        opacity: markable === false && !marked ? 0.5 : 1
+        opacity: markable === false && !marked ? 0.5 : 1,
+        fontSize: '16px', // Prevent iOS zoom
       }}
       tabIndex={onClick ? 0 : -1}
       type="button"
@@ -106,7 +107,7 @@ export default function LoteriaCard({ name, marked = false, onClick, showHover =
         key={`${name}-${deckTheme}`}
         src={cardImageSrc}
         alt={name}
-        className="absolute inset-0 w-full h-full object-cover z-0"
+        className="absolute inset-0 w-full h-full object-cover z-0 ios-transform-gpu"
         onError={e => {
           // Fallback to traditional card if custom card fails to load
           if (!e.currentTarget.src.includes('/cards/')) {

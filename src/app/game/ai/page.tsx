@@ -5,6 +5,7 @@ import LoteriaBoard from "../../../components/LoteriaBoard";
 import LoteriaCard from "../../../components/LoteriaCard";
 import { useSettings } from "../../../context/SettingsContext";
 import { getBoardEdgeStyle } from "../../../lib/boardBackgrounds";
+import { useIOSDetection, useIOSViewport, useIOSTouch } from "../../../hooks/useIOSDetection";
 
 // List of fake names for AI bots used in the game
 const BOT_FAKE_NAMES = [
@@ -34,6 +35,11 @@ export default function AIGamePage() {
   const router = useRouter();
   const { boardEdge, deckTheme } = useSettings();
   const boardEdgeStyle = getBoardEdgeStyle(boardEdge);
+  
+  // iOS detection and optimization hooks
+  const { isIOS } = useIOSDetection();
+  const { viewportHeight } = useIOSViewport();
+  useIOSTouch();
   
   // Minimum 3 bots (4 total players), maximum 19 bots (20 total players)
   const [showAIBoards, setShowAIBoards] = useState(false);
@@ -294,9 +300,17 @@ export default function AIGamePage() {
     );
   }
   // (removed duplicate, now only declared once at the top)
-  // AI Game page styled with vintage/western theme
+  // AI Game page styled with vintage/western theme with iOS optimizations
+  const containerStyle = isIOS ? {
+    minHeight: `${viewportHeight}px`,
+    height: `${viewportHeight}px`,
+  } : {};
+
   return (
-    <div className="min-h-screen bg-[#f8ecd7] dark:bg-[#18181b] bg-[url('/parchment-bg.png')] dark:bg-none bg-cover flex flex-col items-center justify-center py-8 px-2 transition-colors">
+    <div 
+      className="min-h-screen-ios bg-[#f8ecd7] dark:bg-[#18181b] bg-[url('/parchment-bg.png')] dark:bg-none bg-cover flex flex-col items-center justify-center py-8 px-2 transition-colors safe-area-top safe-area-bottom safe-area-left safe-area-right ios-transform-gpu no-bounce"
+      style={containerStyle}
+    >
       {/* Main heading */}
       <h1 className="text-4xl font-western font-extrabold text-center text-[#8c2f2b] dark:text-yellow-200 tracking-widest drop-shadow mb-8 mt-2 transition-colors">Lotería AI Game</h1>
       <div className="w-full max-w-6xl flex flex-col gap-8 items-center">
@@ -314,7 +328,8 @@ export default function AIGamePage() {
                   const val = Math.max(3, Math.min(19, Number(e.target.value)));
                   setPendingNumBots(val);
                 }}
-                className="border-2 border-[#b89c3a] dark:border-yellow-700 bg-[#fff8e1] dark:bg-[#232323] rounded-lg px-3 py-2 w-20 text-center text-lg font-bold shadow-inner focus:outline-none focus:ring-2 focus:ring-[#e1b866] transition-all duration-150"
+                className="border-2 border-[#b89c3a] dark:border-yellow-700 bg-[#fff8e1] dark:bg-[#232323] rounded-lg px-3 py-2 w-20 text-center text-lg font-bold shadow-inner focus:outline-none focus:ring-2 focus:ring-[#e1b866] transition-all duration-150 ios-appearance-none touch-manipulation"
+                style={{ fontSize: '16px' }}
                 disabled={started}
               />
               <span className="ml-2 text-base text-[#3b2c1a] dark:text-gray-200 font-semibold bg-[#e1b866]/60 dark:bg-yellow-900/60 px-3 py-1 rounded-lg border border-[#b89c3a] dark:border-yellow-700 shadow-sm transition-colors">Total players: <span className="text-[#8c2f2b] dark:text-yellow-200 font-bold">{pendingNumBots + 1}</span></span>

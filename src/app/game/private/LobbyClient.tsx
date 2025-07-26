@@ -65,6 +65,7 @@ import LoteriaBoard from "@/components/LoteriaBoard";
 import LoteriaCard from "@/components/LoteriaCard";
 import { useSettings } from "@/context/SettingsContext";
 import { getBoardEdgeStyle } from "@/lib/boardBackgrounds";
+import { useIOSDetection, useIOSViewport, useIOSTouch } from "@/hooks/useIOSDetection";
 
 // Helper to fetch all card names from /api/cards and generate a random 4x4 board
 async function fetchCardNames(deckTheme?: string): Promise<string[]> {
@@ -86,6 +87,11 @@ function generateBoardFrom(cardNames: string[]): string[][] {
 export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; user: { name: string } }) {
   const { boardEdge, deckTheme } = useSettings();
   const boardEdgeStyle = getBoardEdgeStyle(boardEdge);
+  
+  // iOS detection and optimization hooks
+  const { isIOS } = useIOSDetection();
+  const { viewportHeight } = useIOSViewport();
+  useIOSTouch();
   
   // --- State ---
   // Player list (real users)
@@ -387,9 +393,17 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
     prevCalledCardsLen.current = calledCards.length;
   }, [calledCards]);
 
-  // Main container for the multiplayer lobby and game UI
+  // Main container for the multiplayer lobby and game UI with iOS optimizations
+  const containerStyle = isIOS ? {
+    minHeight: `${viewportHeight}px`,
+    height: `${viewportHeight}px`,
+  } : {};
+
   return (
-    <div className="min-h-screen bg-[#f8ecd7] dark:bg-[#18181b] bg-[url('/parchment-bg.png')] dark:bg-none bg-cover flex flex-col items-center justify-center py-8 px-2 transition-colors">
+    <div 
+      className="min-h-screen-ios bg-[#f8ecd7] dark:bg-[#18181b] bg-[url('/parchment-bg.png')] dark:bg-none bg-cover flex flex-col items-center justify-center py-8 px-2 transition-colors safe-area-top safe-area-bottom safe-area-left safe-area-right ios-transform-gpu no-bounce"
+      style={containerStyle}
+    >
       {/* App title */}
       <h1 className="text-4xl font-western font-extrabold text-center text-[#8c2f2b] dark:text-yellow-200 tracking-widest drop-shadow mb-8 mt-2 transition-colors">Lotería Multiplayer Lobby</h1>
       <div className="w-full max-w-6xl flex flex-col gap-8 items-center">
@@ -408,7 +422,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                   <div className="flex flex-col items-center mb-4">
                     <button
                       onClick={handleStartGame}
-                      className="mb-2 bg-gradient-to-b from-[#e1b866] to-[#b89c3a] text-[#8c2f2b] font-western font-semibold py-3 px-12 rounded-2xl border-2 border-[#8c2f2b] shadow-xl hover:from-[#ffe7a0] hover:to-[#e1b866] hover:text-[#6a1a1a] transition-all duration-150 text-2xl tracking-wider"
+                      className="mb-2 bg-gradient-to-b from-[#e1b866] to-[#b89c3a] text-[#8c2f2b] font-western font-semibold py-3 px-12 rounded-2xl border-2 border-[#8c2f2b] shadow-xl hover:from-[#ffe7a0] hover:to-[#e1b866] hover:text-[#6a1a1a] transition-all duration-150 text-2xl tracking-wider min-h-touch min-w-touch touch-manipulation ios-tap-transparent"
                     >
                       Start Game
                     </button>
@@ -459,7 +473,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                 {/* Chat UI */}
                 <div className="mb-2 w-full">
                   <div className="font-semibold mb-2 text-[#8c2f2b] text-lg flex items-center gap-2"><span className="text-xl">💬</span>Chat:</div>
-                  <div className="bg-[#fff8e1] dark:bg-[#232323] rounded-xl p-3 h-40 overflow-y-auto flex flex-col gap-1 border-2 border-[#e1b866] dark:border-yellow-700 shadow-inner mb-2 transition-colors">
+                  <div className="bg-[#fff8e1] dark:bg-[#232323] rounded-xl p-3 h-40 overflow-y-auto flex flex-col gap-1 border-2 border-[#e1b866] dark:border-yellow-700 shadow-inner mb-2 transition-colors ios-scroll">
                     {chat.length === 0 && <div className="text-gray-400 italic">No messages yet. Say hello! 👋</div>}
                     {chat.map((msg, i) => (
                       <div key={msg.name + '-' + msg.message + '-' + i} className="flex items-start gap-2">
@@ -470,13 +484,14 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                   </div>
                   <div className="flex gap-2 mt-1">
                     <input
-                      className="flex-1 border-2 border-[#b89c3a] dark:border-yellow-700 rounded-lg p-2 bg-[#fff8e1] dark:bg-[#232323] text-[#3b2c1a] dark:text-yellow-100 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all"
+                      className="flex-1 border-2 border-[#b89c3a] dark:border-yellow-700 rounded-lg p-2 bg-[#fff8e1] dark:bg-[#232323] text-[#3b2c1a] dark:text-yellow-100 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all ios-appearance-none touch-manipulation"
+                      style={{ fontSize: '16px' }}
                       value={message}
                       onChange={e => setMessage(e.target.value)}
                       onKeyDown={e => { if (e.key === "Enter") sendMessage(); }}
                       placeholder="Type a message..."
                     />
-                    <button onClick={sendMessage} className="bg-[#e1b866] hover:bg-[#ffe7a0] text-[#8c2f2b] px-6 py-2 rounded-lg font-semibold border-2 border-[#b89c3a] shadow transition-all">Send</button>
+                    <button onClick={sendMessage} className="bg-[#e1b866] hover:bg-[#ffe7a0] text-[#8c2f2b] px-6 py-2 rounded-lg font-semibold border-2 border-[#b89c3a] shadow transition-all min-h-touch min-w-touch touch-manipulation ios-tap-transparent">Send</button>
                   </div>
                 </div>
               </div>
@@ -514,15 +529,10 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                     marks={marks}
                     onMark={(row, col) => {
                       if (!board) return;
-                      setMarks(prev => {
-                        const updated = prev.map((r, i) =>
-                          i === row ? r.map((c, j) => j === col ? !c : c) : r
-                        );
-                        // Emit mark-card to backend for this cell
-                        const socket = getSocket();
-                        socket.emit("mark-card", { lobbyCode, player: user.name, row, col });
-                        return updated;
-                      });
+                      // Only emit to server, don't update local state immediately
+                      // Wait for server confirmation via "mark-card" event
+                      const socket = getSocket();
+                      socket.emit("mark-card", { lobbyCode, player: user.name, row, col });
                     }}
                   />
                 </div>
