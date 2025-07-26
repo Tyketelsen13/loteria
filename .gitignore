@@ -53,3 +53,5 @@ backend/.next/
 # Build artifacts
 /build/
 **/build/
+
+.env*
