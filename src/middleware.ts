@@ -5,6 +5,7 @@ const allowedOrigins = [
   'https://loteria-frontend-ten.vercel.app',
   'https://loteria-frontend-282jftyxa-tyketelsen13s-projects.vercel.app',
   'https://loteria-frontend-git-main-tyketelsen13s-projects.vercel.app',
+  'https://loteria-backend-aoiq.onrender.com',
   'http://localhost:3000',
   'http://localhost:3001',
 ];

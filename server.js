@@ -15,8 +15,33 @@ const handle = app.getRequestHandler();
 
 // Prepare Next.js and start the custom server
 app.prepare().then(() => {
-  // Create HTTP server for Next.js
+  // Create HTTP server for Next.js with CORS support
   const server = createServer((req, res) => {
+    // Add CORS headers for all requests
+    const allowedOrigins = [
+      'https://loteria-frontend-ten.vercel.app',
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://loteria-backend-aoiq.onrender.com'
+    ];
+    
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
+    
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+      res.writeHead(200);
+      res.end();
+      return;
+    }
+    
     const parsedUrl = parse(req.url, true);
     handle(req, res, parsedUrl);
   });
@@ -25,8 +50,15 @@ app.prepare().then(() => {
   const io = new Server(server, {
     path: "/api/socket/io",
     cors: {
-      origin: "*",
+      origin: [
+        "https://loteria-frontend-ten.vercel.app",
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "https://loteria-backend-aoiq.onrender.com"
+      ],
       methods: ["GET", "POST"],
+      credentials: true,
+      allowEIO3: true
     },
   });
 

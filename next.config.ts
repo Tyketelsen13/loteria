@@ -65,9 +65,10 @@ const nextConfig: NextConfig = {
       {
         source: '/api/:path*',
         headers: [
-          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Origin', value: 'https://loteria-frontend-ten.vercel.app' },
           { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
-          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization, Cookie, next-auth.csrf-token, next-auth.callback-url, next-auth.session-token' },
+          { key: 'Access-Control-Allow-Credentials', value: 'true' },
         ],
       },
     ]
