@@ -7,7 +7,6 @@
 
 import UserInfo from "@/components/UserInfo";
 import Link from "next/link";
-import SettingsMenu from "@/components/SettingsMenu";
 import FriendsMenu from "@/components/FriendsMenu";
 import ProfileMenu from "@/components/ProfileMenu";
 import { useEffect, useState } from "react";
@@ -91,10 +90,6 @@ export default function Home() {
       </div>
       {/* Main Card - vintage style */}
       <div className="w-full max-w-3xl bg-white/90 dark:bg-gray-900/90 border-4 border-[#b89c3a] dark:border-yellow-700 rounded-3xl shadow-2xl p-8 flex flex-col items-center gap-8 relative mt-8 drop-shadow-xl transition-colors">
-        {/* Settings Icon at edge of card */}
-        <div className="absolute top-4 right-4 z-20">
-          <SettingsMenu />
-        </div>
         <div className="flex flex-col items-center gap-2 animate-fade-in">
           {/* Main Heading - western font */}
           <h1 className="text-5xl font-western font-extrabold text-center text-red-600 dark:text-red-400 tracking-widest drop-shadow mb-2 transition-colors">
