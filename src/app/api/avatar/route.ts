@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getToken } from 'next-auth/jwt';
 import clientPromise from '@/lib/mongodb';
 import { generateImagineArtCard } from '@/lib/imagineArt';
 
@@ -8,10 +7,13 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    // Get session directly in the API route
-    const session = await getServerSession(authOptions);
+    // Try using JWT token instead of session for better App Router compatibility
+    const token = await getToken({ 
+      req, 
+      secret: process.env.NEXTAUTH_SECRET 
+    });
 
-    if (!session?.user?.email) {
+    if (!token?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -31,11 +33,11 @@ export async function POST(req: NextRequest) {
 
       // For now, we'll just generate a random avatar since file upload to cloud storage would require additional setup
       // In a real implementation, you'd upload to Cloudinary or another service
-      const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(session.user.name || session.user.email || 'Player')}&size=200&background=b89c3a&color=ffffff&font-size=0.33&format=png&seed=${Date.now()}`;
+      const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(token.name || token.email || 'Player')}&size=200&background=b89c3a&color=ffffff&font-size=0.33&format=png&seed=${Date.now()}`;
       
       // Update user's avatar in database
       await db.collection('users').updateOne(
-        { email: session.user.email },
+        { email: token.email },
         { $set: { image: avatarUrl } }
       );
 
@@ -64,12 +66,12 @@ export async function POST(req: NextRequest) {
       
       // Fallback to ui-avatars if AI generation fails
       if (!avatarUrl) {
-        avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(session.user.name || session.user.email || 'Player')}&size=200&background=b89c3a&color=ffffff&font-size=0.33&format=png&seed=${Date.now()}`;
+        avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(token.name || token.email || 'Player')}&size=200&background=b89c3a&color=ffffff&font-size=0.33&format=png&seed=${Date.now()}`;
       }
 
       // Update user's avatar in database
       await db.collection('users').updateOne(
-        { email: session.user.email },
+        { email: token.email },
         { $set: { image: avatarUrl } }
       );
 
