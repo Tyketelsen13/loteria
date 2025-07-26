@@ -57,16 +57,34 @@ export const authOptions: NextAuthOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 days
     updateAge: 24 * 60 * 60, // 24 hours
   },
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === 'production' ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined
+      }
+    }
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.email = user.email;
+        token.name = user.name;
+        token.image = user.image;
       }
       return token;
     },
     async session({ session, token }: { session: any; token: any }) {
       if (token && session.user) {
         session.user.id = token.sub || token.id;
+        session.user.email = token.email;
+        session.user.name = token.name;
+        session.user.image = token.image;
         
         // Skip database operations during build time
         if (!skipDB) {
