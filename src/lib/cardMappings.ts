@@ -135,11 +135,11 @@ export function getCardImageForDeck(cardName: string, deckThemeId: string): stri
     return `/cards/${standardFilename}.png`;
   }
   
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'deessrmbv';
+  const cloudName = 'deessrmbv'; // Hard-code for reliability
   const isVercelProduction = window.location.hostname.includes('vercel.app');
   const isProductionBuild = process.env.NODE_ENV === 'production';
-  // Force Cloudinary for any production environment or Vercel deployment
-  const useCloudinary = isVercelProduction || isProductionBuild;
+  // Force Cloudinary for any Vercel deployment
+  const useCloudinary = isVercelProduction;
   
   // Debug logging (remove after testing)
   console.log('[cardMappings] Environment check:', {
