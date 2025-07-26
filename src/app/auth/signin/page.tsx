@@ -62,9 +62,6 @@ function SignInForm() {
         <h3 className="text-lg font-semibold text-center text-[#3b2c1a] mb-4">
           Sign in to play Lotería
         </h3>
-        <div className="text-sm text-center text-[#8c2f2b] mb-4 bg-[#fff8e1] border border-[#b89c3a] rounded-lg p-2">
-          <strong>Test Account:</strong> test@example.com / password123
-        </div>
         {searchParams?.get("signup") === "success" && (
           <div className="text-green-600 mb-2 text-center bg-green-100 border border-green-400 rounded-lg p-2">
             Account created! Please sign in.
