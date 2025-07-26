@@ -7,6 +7,7 @@ const next = require("next");
 const { Server } = require("socket.io");
 const fs = require("fs");
 const path = require("path");
+const cors = require("cors");
 
 // Determine if running in development mode
 const dev = process.env.NODE_ENV !== "production";
@@ -15,8 +16,38 @@ const handle = app.getRequestHandler();
 
 // Prepare Next.js and start the custom server
 app.prepare().then(() => {
-  // Create HTTP server for Next.js
+  // CORS configuration for API requests
+  const corsOptions = {
+    origin: [
+      'https://loteria-frontend-ten.vercel.app',
+      'https://loteria-frontend-282jftyxa-tyketelsen13s-projects.vercel.app',
+      'https://loteria-frontend-git-main-tyketelsen13s-projects.vercel.app',
+      'http://localhost:3000',
+      'http://localhost:3001',
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie', 'next-auth.csrf-token', 'next-auth.callback-url', 'next-auth.session-token'],
+  };
+
+  // Create HTTP server for Next.js with CORS
   const server = createServer((req, res) => {
+    // Handle CORS for all requests
+    const origin = req.headers.origin;
+    if (corsOptions.origin.includes(origin) || origin && origin.includes('tyketelsen13s-projects.vercel.app')) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Access-Control-Allow-Methods', corsOptions.methods.join(', '));
+      res.setHeader('Access-Control-Allow-Headers', corsOptions.allowedHeaders.join(', '));
+    }
+
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+      res.writeHead(200);
+      res.end();
+      return;
+    }
+
     const parsedUrl = parse(req.url, true);
     handle(req, res, parsedUrl);
   });
@@ -25,8 +56,15 @@ app.prepare().then(() => {
   const io = new Server(server, {
     path: "/api/socket/io",
     cors: {
-      origin: "*",
+      origin: [
+        'https://loteria-frontend-ten.vercel.app',
+        'https://loteria-frontend-282jftyxa-tyketelsen13s-projects.vercel.app',
+        'https://loteria-frontend-git-main-tyketelsen13s-projects.vercel.app',
+        'http://localhost:3000',
+        'http://localhost:3001',
+      ],
       methods: ["GET", "POST"],
+      credentials: true,
     },
   });
 
