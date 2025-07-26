@@ -425,7 +425,7 @@ export default function AIGamePage() {
                         filter: "brightness(0.93)"
                       }}
                     >
-                      <div className="font-western text-lg font-bold mb-3 text-[#fff8e1] px-4 py-1 rounded-xl border border-[#b89c3a] bg-[#8c2f2b] shadow-lg tracking-wider text-center w-full" style={{letterSpacing: '0.08em'}}>
+                      <div className="font-western text-lg font-bold mb-3 text-blue-400 px-4 py-1 rounded-xl border border-[#b89c3a] bg-[#8c2f2b] shadow-lg tracking-wider text-center w-full" style={{letterSpacing: '0.08em'}}>
                         {botNames[idx]}
                       </div>
                       <LoteriaBoard

@@ -560,7 +560,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                       <li key={p} className="bg-[#ffe7a0] text-[#8c2f2b] px-4 py-2 rounded-full text-base font-semibold border border-[#b89c3a] shadow flex items-center gap-2"><span className="text-lg">🧑</span>{p}</li>
                     ))}
                     {bots.map((b) => (
-                      <li key={b} className="bg-blue-100 text-blue-900 px-4 py-2 rounded-full text-base font-semibold border border-blue-400 shadow flex items-center gap-2"><span className="text-lg">🤖</span>{b.replace(/^AI /, "")} <span className="text-xs font-normal">(Bot)</span></li>
+                      <li key={b} className="bg-blue-100 text-blue-600 px-4 py-2 rounded-full text-base font-semibold border border-blue-400 shadow flex items-center gap-2"><span className="text-lg">🤖</span>{b.replace(/^AI /, "")} <span className="text-xs font-normal">(Bot)</span></li>
                     ))}
                   </ul>
                 </div>
@@ -571,7 +571,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                     {chat.length === 0 && <div className="text-gray-400 italic">No messages yet. Say hello! 👋</div>}
                     {chat.map((msg, i) => (
                       <div key={msg.name + '-' + msg.message + '-' + i} className="flex items-start gap-2">
-                        <span className="font-bold text-[#8c2f2b] dark:text-yellow-200">{msg.name}:</span>
+                        <span className={`font-bold ${msg.name.startsWith('AI ') || msg.name.endsWith(' AI') ? 'text-blue-600 dark:text-blue-400' : 'text-[#8c2f2b] dark:text-yellow-200'}`}>{msg.name}:</span>
                         <span className="text-[#3b2c1a] dark:text-yellow-100">{msg.message}</span>
                       </div>
                     ))}
