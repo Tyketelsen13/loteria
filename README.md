@@ -63,16 +63,15 @@ Copy
 Edit
 git clone https://github.com/yourusername/loteria-online.git
 cd loteria-online
+
 2. Install dependencies
 bash
 Copy
 Edit
 npm install
-# or
-pnpm install
+
 3. Add environment variables
 Create a .env.local file in the root and set:
-
 ini
 Copy
 Edit
@@ -80,6 +79,7 @@ MONGODB_URI=your_mongo_uri
 JWT_SECRET=your_jwt_secret
 NEXT_PUBLIC_SOCKET_URL=http://localhost:3001
 CLOUDINARY_URL=your_cloudinary_url
+
 4. Start backend server
 bash
 Copy
@@ -87,6 +87,7 @@ Edit
 cd backend
 npm install
 npm run dev
+
 5. Start frontend app
 bash
 Copy
@@ -106,13 +107,12 @@ App will be available at: https://loteria-frontend-ten.vercel.app/
 
 🌐 Language toggle: English / Español
 
-📸 Screenshots
-<p align="center"> <img src="https://yourcloudinary.com/loteria-board-preview.png" width="400" alt="Lotería Board Screenshot" /> <img src="https://yourcloudinary.com/loteria-lobby.png" width="400" alt="Lobby Screenshot" /> </p>
+
 📄 License
 This project is licensed under the MIT License.
 
 🧑‍💻 Author
 Tiace Joseph Ketelsen
 Full-Stack Developer | Springboard SWE Grad
-GitHub • LinkedIn
+
 
