@@ -47,7 +47,8 @@ export default function ProfileMenu() {
             onError={(e) => {
               // Fallback to ui-avatars service on image load error
               const target = e.target as HTMLImageElement;
-              const fallbackUrl = `https://ui-avatars.com/api/?name=Player&size=32&background=b89c3a&color=ffffff&font-size=0.33&format=png`;
+              const userName = user?.name || user?.email || 'Player';
+              const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&size=32&background=b89c3a&color=ffffff&font-size=0.33&format=png`;
               if (target.src !== fallbackUrl) {
                 target.src = fallbackUrl;
               }
