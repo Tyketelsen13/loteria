@@ -45,10 +45,11 @@ export default function ProfileMenu() {
             height={32}
             className="rounded-full border border-gray-300 dark:border-gray-600 object-cover"
             onError={(e) => {
-              // Fallback to default avatar on image load error
+              // Fallback to ui-avatars service on image load error
               const target = e.target as HTMLImageElement;
-              if (target.src !== `${window.location.origin}/default-avatar.png`) {
-                target.src = "/default-avatar.png";
+              const fallbackUrl = `https://ui-avatars.com/api/?name=Player&size=32&background=b89c3a&color=ffffff&font-size=0.33&format=png`;
+              if (target.src !== fallbackUrl) {
+                target.src = fallbackUrl;
               }
             }}
           />

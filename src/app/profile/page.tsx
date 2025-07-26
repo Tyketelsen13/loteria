@@ -109,15 +109,16 @@ export default function ProfilePage() {
         <div className="flex flex-col items-center gap-2">
           <div className="relative group">
             <img
-              src={user?.image || "/default-avatar.png"}
+              src={user?.image || `https://ui-avatars.com/api/?name=Player&size=80&background=b89c3a&color=ffffff&font-size=0.33&format=png`}
               alt="Profile"
               width={80}
               height={80}
               className="rounded-full border-2 border-[#b89c3a] dark:border-yellow-700 object-cover shadow-md transition-colors"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
-                if (target.src !== `${window.location.origin}/default-avatar.png`) {
-                  target.src = "/default-avatar.png";
+                const fallbackUrl = `https://ui-avatars.com/api/?name=Player&size=80&background=b89c3a&color=ffffff&font-size=0.33&format=png`;
+                if (target.src !== fallbackUrl) {
+                  target.src = fallbackUrl;
                 }
               }}
             />
