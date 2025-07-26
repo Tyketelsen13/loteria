@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSession, signIn } from 'next-auth/react';
 import ProfileMenu from '@/components/ProfileMenu'; // adjust path as needed
 import Avatar from '@/components/Avatar';
 
@@ -11,6 +12,7 @@ interface UserProfile {
 }
 
 export default function ProfilePage() {
+  const { data: session, status } = useSession();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -18,18 +20,47 @@ export default function ProfilePage() {
   const [file, setFile] = useState<File | null>(null);
 
   const fetchProfile = async () => {
-    const res = await fetch('/api/profile');
+    const res = await fetch('/api/profile', {
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     const data = await res.json();
     if (res.ok) {
       setUser(data);
     } else {
       console.error('Failed to load profile:', data.error);
+      setError('Failed to load profile. Please try signing in again.');
     }
   };
 
   useEffect(() => {
-    fetchProfile();
-  }, []);
+    if (status === 'authenticated') {
+      fetchProfile();
+    }
+  }, [status]);
+
+  // Show loading while checking authentication
+  if (status === 'loading') {
+    return <div className="p-6">Loading...</div>;
+  }
+
+  // Redirect to sign in if not authenticated
+  if (status === 'unauthenticated') {
+    return (
+      <div className="p-6 max-w-xl mx-auto text-center">
+        <h2 className="text-2xl font-bold mb-4">Please Sign In</h2>
+        <p className="text-gray-600 mb-4">You need to be signed in to view your profile.</p>
+        <button
+          onClick={() => signIn()}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Sign In
+        </button>
+      </div>
+    );
+  }
 
   const handleGenerateAvatar = async () => {
     setLoading(true);
@@ -37,6 +68,7 @@ export default function ProfilePage() {
     try {
       const res = await fetch('/api/avatar', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ generateAI: true, customPrompt: prompt }),
       });
@@ -69,6 +101,7 @@ export default function ProfilePage() {
     try {
       const res = await fetch('/api/avatar', {
         method: 'POST',
+        credentials: 'include',
         body: formData,
       });
 
