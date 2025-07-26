@@ -10,26 +10,51 @@ export async function GET(req: NextRequest) {
   try {
     console.log('Profile API - Starting authentication check');
     console.log('Profile API - Request URL:', req.url);
-    console.log('Profile API - Cookies:', req.headers.get('cookie') ? 'Present' : 'Missing');
+    
+    // Log all cookies to debug
+    const cookieHeader = req.headers.get('cookie');
+    console.log('Profile API - Cookie header:', cookieHeader);
+    
+    // Parse cookies manually to see what's available
+    const cookies = cookieHeader ? Object.fromEntries(
+      cookieHeader.split('; ').map(cookie => {
+        const [name, ...rest] = cookie.split('=');
+        return [name, rest.join('=')];
+      })
+    ) : {};
+    console.log('Profile API - Available cookies:', Object.keys(cookies));
     
     // Try multiple authentication methods
     let userEmail = null;
     
-    // Method 1: Try JWT token
-    try {
-      const token = await getToken({ 
-        req, 
-        secret: process.env.NEXTAUTH_SECRET,
-        cookieName: process.env.NODE_ENV === 'production' ? '__Secure-next-auth.session-token' : 'next-auth.session-token'
-      });
-      
-      console.log('Profile API - JWT Token:', token ? 'Found' : 'Not found');
-      if (token?.email) {
-        userEmail = token.email;
-        console.log('Profile API - JWT Email:', userEmail);
+    // Method 1: Try JWT token with different cookie names
+    const possibleCookieNames = [
+      'next-auth.session-token',
+      '__Secure-next-auth.session-token',
+      'next-auth.session-token.0',
+      'next-auth.session-token.1'
+    ];
+    
+    for (const cookieName of possibleCookieNames) {
+      if (cookies[cookieName]) {
+        console.log(`Profile API - Found cookie: ${cookieName}`);
+        try {
+          const token = await getToken({ 
+            req, 
+            secret: process.env.NEXTAUTH_SECRET,
+            cookieName
+          });
+          
+          console.log(`Profile API - JWT Token with ${cookieName}:`, token ? 'Found' : 'Not found');
+          if (token?.email) {
+            userEmail = token.email;
+            console.log('Profile API - JWT Email:', userEmail);
+            break;
+          }
+        } catch (jwtError) {
+          console.log(`Profile API - JWT Error with ${cookieName}:`, jwtError);
+        }
       }
-    } catch (jwtError) {
-      console.log('Profile API - JWT Error:', jwtError);
     }
     
     // Method 2: Try server session if JWT fails
@@ -48,7 +73,13 @@ export async function GET(req: NextRequest) {
 
     if (!userEmail) {
       console.log('Profile API - No authentication found, returning 401');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ 
+        error: 'Unauthorized',
+        debug: {
+          availableCookies: Object.keys(cookies),
+          hasNextAuthSecret: !!process.env.NEXTAUTH_SECRET
+        }
+      }, { status: 401 });
     }
 
     const client = await clientPromise;

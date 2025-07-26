@@ -57,18 +57,6 @@ export const authOptions: NextAuthOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 days
     updateAge: 24 * 60 * 60, // 24 hours
   },
-  cookies: {
-    sessionToken: {
-      name: process.env.NODE_ENV === 'production' ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined
-      }
-    }
-  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -88,13 +76,17 @@ export const authOptions: NextAuthOptions = {
         
         // Skip database operations during build time
         if (!skipDB) {
-          // Fetch fresh user data from database to include image
-          const client = await clientPromise;
-          const db = client.db(process.env.MONGODB_DB);
-          const user = await db.collection("users").findOne({ email: session.user.email });
-          if (user) {
-            session.user.image = user.image;
-            session.user.name = user.name;
+          try {
+            // Fetch fresh user data from database to include image
+            const client = await clientPromise;
+            const db = client.db(process.env.MONGODB_DB);
+            const user = await db.collection("users").findOne({ email: session.user.email });
+            if (user) {
+              session.user.image = user.image;
+              session.user.name = user.name;
+            }
+          } catch (dbError) {
+            console.log('Session callback DB error:', dbError);
           }
         }
       }
