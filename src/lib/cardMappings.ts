@@ -129,23 +129,27 @@ export function getCardImageForDeck(cardName: string, deckThemeId: string): stri
   }
 
   // Use Cloudinary URLs in production (deployed on Vercel)
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'deessrmbv'; // Fallback to known cloud name
-  const isVercelProduction = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app');
+  // Force client-side execution for proper environment detection
+  if (typeof window === 'undefined') {
+    // Server-side: return traditional cards to avoid 404s during SSR
+    return `/cards/${standardFilename}.png`;
+  }
+  
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'deessrmbv';
+  const isVercelProduction = window.location.hostname.includes('vercel.app');
   const isProductionBuild = process.env.NODE_ENV === 'production';
-  const useCloudinary = isVercelProduction || (isProductionBuild && typeof window !== 'undefined' && window.location.hostname !== 'localhost');
+  const useCloudinary = isVercelProduction || (isProductionBuild && window.location.hostname !== 'localhost');
   
   // Debug logging (remove after testing)
-  if (typeof window !== 'undefined') {
-    console.log('[cardMappings] Environment check:', {
-      cardName,
-      deckThemeId,
-      cloudName: cloudName ? cloudName : 'not set',
-      isVercelProduction,
-      isProductionBuild,
-      useCloudinary,
-      hostname: window.location.hostname
-    });
-  }
+  console.log('[cardMappings] Environment check:', {
+    cardName,
+    deckThemeId,
+    cloudName,
+    isVercelProduction,
+    isProductionBuild,
+    useCloudinary,
+    hostname: window.location.hostname
+  });
   
   if (useCloudinary) {
     const baseUrl = `https://res.cloudinary.com/${cloudName}/image/upload/f_auto,q_auto/loteria-cards`;
