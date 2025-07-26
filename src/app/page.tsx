@@ -128,10 +128,14 @@ export default function Home() {
               <span className="text-base font-bold tracking-wide text-center leading-tight">Private Lobby</span>
             </Link>
             
-            {/* AI Game Card */}
-            <Link href="/game/ai" className="group bg-gradient-to-br from-pink-600 to-pink-700 hover:from-pink-700 hover:to-pink-800 text-white font-semibold py-6 px-4 rounded-xl flex flex-col items-center gap-3 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 min-h-[120px] justify-center border-2 border-pink-500 hover:border-pink-400">
-              <FaRobot className="text-3xl group-hover:scale-110 transition-transform duration-300" />
-              <span className="text-base font-bold tracking-wide text-center leading-tight">AI Game</span>
+            {/* AI Game Card - Enhanced and Bigger */}
+            <Link href="/game/ai" className="group bg-gradient-to-br from-pink-600 to-pink-700 hover:from-pink-700 hover:to-pink-800 text-white font-semibold py-8 px-6 rounded-xl flex flex-col items-center gap-4 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-110 min-h-[140px] justify-center border-2 border-pink-500 hover:border-pink-400 relative overflow-hidden">
+              {/* Background glow effect */}
+              <div className="absolute inset-0 bg-gradient-to-br from-pink-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <FaRobot className="text-4xl group-hover:scale-125 transition-transform duration-300 relative z-10" />
+              <span className="text-lg font-bold tracking-wide text-center leading-tight relative z-10">AI Game</span>
+              {/* Shine effect */}
+              <div className="absolute -top-2 -right-2 w-4 h-4 bg-yellow-300 rounded-full opacity-0 group-hover:opacity-100 animate-pulse transition-opacity duration-300"></div>
             </Link>
           </div>
         </div>
