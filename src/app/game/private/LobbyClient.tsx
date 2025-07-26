@@ -155,21 +155,42 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
     }
     
     let timeoutId: NodeJS.Timeout | null = null;
+    let fallbackTimeoutId: NodeJS.Timeout | null = null;
     let cancelled = false;
     let isFirstCall = calledCards.length === 0;
+    let waitingForConfirmation = false;
     
     console.log('[CLIENT] Host starting card calling logic');
+    
+    function callNextCard() {
+      if (cancelled || waitingForConfirmation) return;
+      
+      const remaining = cardNames.filter(c => !calledCards.includes(c));
+      if (remaining.length === 0) {
+        console.log('[CLIENT] No more cards to call');
+        return;
+      }
+      
+      const next = remaining[Math.floor(Math.random() * remaining.length)];
+      const socket = getSocket();
+      
+      console.log('[CLIENT] Host calling card:', next);
+      waitingForConfirmation = true;
+      socket.emit("call-card", { lobbyCode, card: next });
+      
+      // Fallback timeout in case server doesn't respond
+      fallbackTimeoutId = setTimeout(() => {
+        if (cancelled) return;
+        console.log('[CLIENT] No server confirmation received, continuing anyway');
+        waitingForConfirmation = false;
+        scheduleNext();
+      }, 5000); // 5 second fallback
+    }
     
     function scheduleNext() {
       if (cancelled) return;
       timeoutId = setTimeout(() => {
-        if (cancelled) return;
-        const remaining = cardNames.filter(c => !calledCards.includes(c));
-        if (remaining.length === 0) return;
-        const next = remaining[Math.floor(Math.random() * remaining.length)];
-        const socket = getSocket();
-        console.log('[CLIENT] Host calling card:', next);
-        socket.emit("call-card", { lobbyCode, card: next });
+        callNextCard();
       }, intervalSec * 1000);
     }
     
@@ -177,25 +198,29 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
     const socket = getSocket();
     function onCalledCard(card: string) {
       console.log('[CLIENT] Received called-card confirmation:', card);
-      if (!cancelled) scheduleNext();
+      if (cancelled) return;
+      
+      waitingForConfirmation = false;
+      if (fallbackTimeoutId) {
+        clearTimeout(fallbackTimeoutId);
+        fallbackTimeoutId = null;
+      }
+      scheduleNext();
     }
     socket.on("called-card", onCalledCard);
     
     // Start the first call immediately if no cards have been called
     if (isFirstCall) {
-      const remaining = cardNames.filter(c => !calledCards.includes(c));
-      if (remaining.length > 0) {
-        const next = remaining[Math.floor(Math.random() * remaining.length)];
-        console.log('[CLIENT] Host calling first card:', next);
-        socket.emit("call-card", { lobbyCode, card: next });
-      }
+      callNextCard();
     } else {
       scheduleNext();
     }
     
     return () => {
       cancelled = true;
+      waitingForConfirmation = false;
       if (timeoutId) clearTimeout(timeoutId);
+      if (fallbackTimeoutId) clearTimeout(fallbackTimeoutId);
       socket.off("called-card", onCalledCard);
       console.log('[CLIENT] Card calling effect cleanup');
     };
@@ -206,6 +231,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
   useEffect(() => {
     const socket = getSocket();
     socket.on("called-cards", (cards: string[]) => {
+      console.log('[CLIENT] Received called-cards update:', cards.length, 'cards');
       setCalledCards(cards);
     });
     socket.on("mark-card", (payload: { player: string; row: number; col: number }) => {
@@ -711,6 +737,28 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                       </span>
                       <span className="tracking-wide">
                         {isPaused ? 'Resume' : 'Pause'}
+                      </span>
+                    </button>
+                    <button
+                      className="flex items-center gap-2 px-4 py-2 rounded-full font-semibold border-2 shadow transition-all duration-200
+                        bg-purple-600 hover:bg-purple-700 border-purple-400 text-white
+                        hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-300"
+                      onClick={() => {
+                        const remaining = cardNames.filter(c => !calledCards.includes(c));
+                        if (remaining.length > 0) {
+                          const next = remaining[Math.floor(Math.random() * remaining.length)];
+                          console.log('[CLIENT] Manual call card clicked:', next);
+                          const socket = getSocket();
+                          socket.emit("call-card", { lobbyCode, card: next });
+                        }
+                      }}
+                      title="Manually call the next card if automatic calling gets stuck"
+                    >
+                      <span className="text-lg">
+                        📢
+                      </span>
+                      <span className="tracking-wide text-sm">
+                        Call Card
                       </span>
                     </button>
                     <button

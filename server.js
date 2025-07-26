@@ -139,7 +139,16 @@ app.prepare().then(() => {
     // Host calls a card; update called cards and notify all clients
     socket.on("call-card", ({ lobbyCode, card }) => {
       const game = lobbyGames[lobbyCode];
-      if (!game || !card || game.called.includes(card)) return;
+      if (!game || !card) {
+        console.log(`[Socket.IO] Invalid card call - game: ${!!game}, card: ${card}`);
+        return;
+      }
+      
+      // Check if card was already called
+      if (game.called.includes(card)) {
+        console.log(`[Socket.IO] Card ${card} already called in ${lobbyCode}, ignoring duplicate`);
+        return;
+      }
       
       // Additional validation: only allow calling from known lobbies with proper host
       const expectedHost = lobbyHosts[lobbyCode];
@@ -161,7 +170,7 @@ app.prepare().then(() => {
       }
       // Always emit the full called-cards array after every call, including the first
       io.to(lobbyCode).emit("called-cards", game.called);
-      // Optionally, emit the single called card for host's interval logic
+      // Emit the single called card for host's interval logic - this is crucial for preventing stuck cards
       io.to(lobbyCode).emit("called-card", card);
 
       // --- AI Bingo Logic + Tiebreaker ---
