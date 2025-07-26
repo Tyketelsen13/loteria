@@ -107,24 +107,27 @@ export default function Home() {
         </div>
         {/* User Info Card */}
         <UserInfo />
-        {/* Action Cards - styled as vintage buttons */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 w-full mt-2">
+        {/* Action Cards - styled as vintage buttons with improved spacing */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full mt-4 max-w-4xl mx-auto">
           {/* Join Game Card */}
-          <Link href="/game/join" className="group bg-blue-600 hover:bg-blue-700 text-white font-semibold py-6 px-4 rounded-2xl flex flex-col items-center gap-2 shadow transition transform hover:-translate-y-1">
-            <FaGamepad className="text-3xl group-hover:scale-110 transition" />
-            <span>Join Game</span>
+          <Link href="/game/join" className="group bg-blue-600 hover:bg-blue-700 text-white font-semibold py-8 px-6 rounded-2xl flex flex-col items-center gap-3 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 min-h-[140px] justify-center">
+            <FaGamepad className="text-4xl group-hover:scale-125 transition-transform duration-300" />
+            <span className="text-lg font-bold tracking-wide">Join Game</span>
           </Link>
-          <Link href="/game/create" className="group bg-green-600 hover:bg-green-700 text-white font-semibold py-6 px-4 rounded-2xl flex flex-col items-center gap-2 shadow transition transform hover:-translate-y-1">
-            <FaPlus className="text-3xl group-hover:scale-110 transition" />
-            <span>Create Game</span>
+          
+          <Link href="/game/create" className="group bg-green-600 hover:bg-green-700 text-white font-semibold py-8 px-6 rounded-2xl flex flex-col items-center gap-3 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 min-h-[140px] justify-center">
+            <FaPlus className="text-4xl group-hover:scale-125 transition-transform duration-300" />
+            <span className="text-lg font-bold tracking-wide">Create Game</span>
           </Link>
-          <Link href="/game/private" className="group bg-purple-600 hover:bg-purple-700 text-white font-semibold py-6 px-4 rounded-2xl flex flex-col items-center gap-2 shadow transition transform hover:-translate-y-1">
-            <FaLock className="text-3xl group-hover:scale-110 transition" />
-            <span>Private Lobby</span>
+          
+          <Link href="/game/private" className="group bg-purple-600 hover:bg-purple-700 text-white font-semibold py-8 px-6 rounded-2xl flex flex-col items-center gap-3 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 min-h-[140px] justify-center">
+            <FaLock className="text-4xl group-hover:scale-125 transition-transform duration-300" />
+            <span className="text-lg font-bold tracking-wide">Private Lobby</span>
           </Link>
-          <Link href="/game/ai" className="group bg-pink-600 hover:bg-pink-700 text-white font-semibold py-6 px-4 rounded-2xl flex flex-col items-center gap-2 shadow transition transform hover:-translate-y-1">
-            <FaRobot className="text-3xl group-hover:scale-110 transition" />
-            <span>AI Game</span>
+          
+          <Link href="/game/ai" className="group bg-pink-600 hover:bg-pink-700 text-white font-semibold py-8 px-6 rounded-2xl flex flex-col items-center gap-3 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 min-h-[140px] justify-center">
+            <FaRobot className="text-4xl group-hover:scale-125 transition-transform duration-300" />
+            <span className="text-lg font-bold tracking-wide">AI Game</span>
           </Link>
         </div>
         {/* Active Games List */}
