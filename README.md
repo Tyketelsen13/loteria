@@ -111,6 +111,10 @@ App will be available at: https://loteria-frontend-ten.vercel.app/
 📄 License
 This project is licensed under the MIT License.
 
+### 🔒 Image Usage
+All Lotería card images in this project were generated using ImagineArt with custom prompts. While not subject to traditional copyright, these images are licensed for use only within the Lotería Online project. Reuse, redistribution, or resale is not permitted without permission from the author.
+
+
 🧑‍💻 Author
 Tiace Joseph Ketelsen
 Full-Stack Developer | Springboard SWE Grad
