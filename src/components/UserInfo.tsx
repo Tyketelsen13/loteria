@@ -16,7 +16,7 @@ export default function UserInfo() {
   return (
     <div className="flex flex-col items-center gap-2 mb-6">
       { /* Show user's name or email */}
-      <div className="text-lg font-semibold">Welcome, {user.name || user.email}!</div>
+      <div className="text-lg font-semibold text-yellow-600 dark:text-yellow-400">Welcome, {user.name || user.email}!</div>
     </div>
     
   );
