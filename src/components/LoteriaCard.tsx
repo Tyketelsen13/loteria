@@ -2,6 +2,7 @@
 import { useSettings } from "@/context/SettingsContext";
 import { getCardDeckClass, getCardStyleClass, getDeckThemeFolder } from "@/lib/boardBackgrounds";
 import { getCardImageForDeck } from "@/lib/cardMappings";
+import { cardPreloader } from "@/lib/cardPreloader";
 import { useEffect, useState } from "react";
 
 interface LoteriaCardProps {
@@ -55,24 +56,39 @@ export default function LoteriaCard({ name, marked = false, onClick, showHover =
   
   // Use state to ensure card URL is generated on client side only
   const [cardImageSrc, setCardImageSrc] = useState<string>('');
+  const [imageLoaded, setImageLoaded] = useState<boolean>(false);
   
   useEffect(() => {
-    // Only generate the URL on the client side to ensure proper environment detection
-    setCardImageSrc(getCardImageForDeck(name, deckTheme));
+    // Check if card is preloaded first
+    const preloadedImage = cardPreloader.getPreloadedImage(name, deckTheme);
+    if (preloadedImage) {
+      setCardImageSrc(preloadedImage.src);
+      setImageLoaded(true);
+    } else {
+      // Only generate the URL on the client side to ensure proper environment detection
+      setCardImageSrc(getCardImageForDeck(name, deckTheme));
+      setImageLoaded(false);
+    }
   }, [name, deckTheme]);
   
   if (variant === "plain") {
     // Use black border and background for all decks to hide white edging on cards
     const borderClass = 'border-black bg-black';
-    const imgClass = 'w-full h-full object-cover';
+    const imgClass = 'w-full h-full object-cover transition-opacity duration-200';
     
     return (
-      <div className={`w-24 h-32 rounded-lg overflow-hidden ${borderClass} ${cardDeckClass} flex items-center justify-center ios-transform-gpu ios-smooth ${className ?? ''}`}>
+      <div className={`w-24 h-32 rounded-lg overflow-hidden ${borderClass} ${cardDeckClass} flex items-center justify-center ios-transform-gpu ios-smooth relative ${className ?? ''}`}>
+        {!imageLoaded && (
+          <div className="absolute inset-0 bg-gray-700 flex items-center justify-center">
+            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        )}
         <img
           key={`${name}-${deckTheme}`}
           src={cardImageSrc}
           alt={name}
-          className={imgClass}
+          className={`${imgClass} ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+          onLoad={() => setImageLoaded(true)}
           onError={e => {
             // Fallback to traditional card if custom card fails to load
             if (!e.currentTarget.src.includes('/cards/')) {
@@ -99,6 +115,12 @@ export default function LoteriaCard({ name, marked = false, onClick, showHover =
       type="button"
       disabled={markable === false && !marked}
     >
+      {/* Loading spinner for card images */}
+      {!imageLoaded && (
+        <div className="absolute inset-0 bg-gray-600 flex items-center justify-center z-5">
+          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
       {/* Hover border effect */}
       {showHover && (
         <span className="absolute inset-0 rounded-lg border-4 border-black opacity-0 group-hover:opacity-80 pointer-events-none transition-opacity z-10" />
@@ -107,7 +129,8 @@ export default function LoteriaCard({ name, marked = false, onClick, showHover =
         key={`${name}-${deckTheme}`}
         src={cardImageSrc}
         alt={name}
-        className="absolute inset-0 w-full h-full object-cover z-0 ios-transform-gpu"
+        className={`absolute inset-0 w-full h-full object-cover z-0 ios-transform-gpu transition-opacity duration-200 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+        onLoad={() => setImageLoaded(true)}
         onError={e => {
           // Fallback to traditional card if custom card fails to load
           if (!e.currentTarget.src.includes('/cards/')) {

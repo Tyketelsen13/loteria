@@ -66,6 +66,7 @@ import LoteriaCard from "@/components/LoteriaCard";
 import { useSettings } from "@/context/SettingsContext";
 import { getBoardEdgeStyle } from "@/lib/boardBackgrounds";
 import { useIOSDetection, useIOSViewport, useIOSTouch } from "@/hooks/useIOSDetection";
+import { cardPreloader } from "@/lib/cardPreloader";
 
 // Helper to fetch all card names from /api/cards and generate a random 4x4 board
 async function fetchCardNames(deckTheme?: string): Promise<string[]> {
@@ -280,6 +281,19 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
     };
   }, []);
 
+  // Handle deck theme changes - preload cards for new theme
+  useEffect(() => {
+    if (cardNames.length > 0) {
+      console.log('[CLIENT] Deck theme changed, preloading cards for:', deckTheme);
+      cardPreloader.clearCache(); // Clear old theme cache
+      cardPreloader.preloadCards(cardNames, deckTheme).then(() => {
+        console.log('[CLIENT] Theme change preloading complete');
+      }).catch((error) => {
+        console.warn('[CLIENT] Theme change preloading failed:', error);
+      });
+    }
+  }, [deckTheme, cardNames]);
+
   useEffect(() => {
     // Check notification setting from localStorage
     let notifications = true;
@@ -326,12 +340,22 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       // Use the deck from the server as the source of truth for cardNames
       if (payload.deck && Array.isArray(payload.deck) && payload.deck.length > 0) {
         setCardNames(payload.deck);
+        // Preload all card images to prevent white flashes
+        cardPreloader.preloadCards(payload.deck, deckTheme).then(() => {
+          console.log('[CLIENT] Card preloading complete');
+        }).catch((error) => {
+          console.warn('[CLIENT] Card preloading failed:', error);
+        });
       } else {
         // Fallback: try to infer deck from boards if missing (should not happen)
         const allCards = Object.values(payload.boards).flat(2);
         const unique = Array.from(new Set(allCards));
         setCardNames(unique);
         console.warn('[CLIENT] No deck in payload, using fallback unique cards:', unique);
+        // Preload fallback cards
+        cardPreloader.preloadCards(unique, deckTheme).catch((error) => {
+          console.warn('[CLIENT] Fallback card preloading failed:', error);
+        });
       }
       setShowBoard(true);
       setGameStarted(true); // Start the game for all players
