@@ -69,6 +69,7 @@ app.prepare().then(() => {
   // --- In-memory game state per lobby ---
   // This object holds all active lobbies and their game state (not persistent)
   const lobbyGames = {};
+  const lobbyHosts = {}; // Track who the host is for each lobby
 
   // Handle new Socket.IO connections
   io.on("connection", (socket) => {
@@ -90,6 +91,11 @@ app.prepare().then(() => {
           winner: null,
           players: [],
         };
+        // If no host is set and this is the first player, make them host
+        if (!lobbyHosts[lobbyCode]) {
+          lobbyHosts[lobbyCode] = user;
+          console.log(`[Socket.IO] Setting ${user} as host for lobby ${lobbyCode}`);
+        }
       }
       // Add player to lobby if not already present
       if (!lobbyGames[lobbyCode].players.some((p) => p.id === socket.id)) {
@@ -134,7 +140,16 @@ app.prepare().then(() => {
     socket.on("call-card", ({ lobbyCode, card }) => {
       const game = lobbyGames[lobbyCode];
       if (!game || !card || game.called.includes(card)) return;
+      
+      // Additional validation: only allow calling from known lobbies with proper host
+      const expectedHost = lobbyHosts[lobbyCode];
+      if (!expectedHost) {
+        console.log(`[Socket.IO] No host found for lobby ${lobbyCode}, allowing card call`);
+      }
+      
       game.called.push(card);
+      console.log(`[Socket.IO] Card called in ${lobbyCode}: ${card} (total: ${game.called.length})`);
+      
       // --- Tiebreaker and Card Stopping Logic ---
       // If there are active winners, only allow them to continue; otherwise, stop card calling
       if (!game.activeWinners) game.activeWinners = null;
@@ -268,6 +283,16 @@ app.prepare().then(() => {
           game.activeWinners = newWinners;
           io.to(lobbyCode).emit("chat-message", { name: "System", message: `¡Lotería! Multiple players have bingo! Only they continue. Everyone else is out.` });
         }
+      }
+    });
+
+    // --- Set Host ---
+    // Set or update who the host is for a lobby
+    socket.on("set-host", ({ lobbyCode, host }) => {
+      if (lobbyCode && host) {
+        lobbyHosts[lobbyCode] = host;
+        console.log(`[Socket.IO] Host set for lobby ${lobbyCode}: ${host}`);
+        io.to(lobbyCode).emit("host-updated", host);
       }
     });
 

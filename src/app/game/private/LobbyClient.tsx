@@ -108,8 +108,9 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
   const [board, setBoard] = useState<string[][] | null>(null);
   // All boards for all players (by name)
   const [allBoards, setAllBoards] = useState<{ [name: string]: string[][] }>({});
-  // Whether the user is the host (first in player list)
+  // Whether the user is the host (lobby creator, not just first player)
   const [isHost, setIsHost] = useState(false);
+  const [lobbyHost, setLobbyHost] = useState<string | null>(null);
   // Winner modal state
   const [winner, setWinner] = useState<string | null>(null);
   // Called cards (deck state)
@@ -142,12 +143,22 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
   // Host: Start calling cards when gameStarted is true
 
   // Host: Start calling cards when gameStarted is true, and not paused
+  // IMPORTANT: Only ONE client should run this (the actual host)
   useEffect(() => {
     if (!isHost || !gameStarted || isPaused || winner) return;
     if (!cardNames.length) return;
+    
+    // Additional safety check: ensure only the real host calls cards
+    if (lobbyHost && lobbyHost !== user.name) {
+      console.log('[CLIENT] Not the real host, skipping card calling');
+      return;
+    }
+    
     let timeoutId: NodeJS.Timeout | null = null;
     let cancelled = false;
     let isFirstCall = calledCards.length === 0;
+    
+    console.log('[CLIENT] Host starting card calling logic');
     
     function scheduleNext() {
       if (cancelled) return;
@@ -157,6 +168,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
         if (remaining.length === 0) return;
         const next = remaining[Math.floor(Math.random() * remaining.length)];
         const socket = getSocket();
+        console.log('[CLIENT] Host calling card:', next);
         socket.emit("call-card", { lobbyCode, card: next });
       }, intervalSec * 1000);
     }
@@ -164,6 +176,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
     // Listen for confirmation from server before scheduling next
     const socket = getSocket();
     function onCalledCard(card: string) {
+      console.log('[CLIENT] Received called-card confirmation:', card);
       if (!cancelled) scheduleNext();
     }
     socket.on("called-card", onCalledCard);
@@ -173,6 +186,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       const remaining = cardNames.filter(c => !calledCards.includes(c));
       if (remaining.length > 0) {
         const next = remaining[Math.floor(Math.random() * remaining.length)];
+        console.log('[CLIENT] Host calling first card:', next);
         socket.emit("call-card", { lobbyCode, card: next });
       }
     } else {
@@ -183,10 +197,11 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       cancelled = true;
       if (timeoutId) clearTimeout(timeoutId);
       socket.off("called-card", onCalledCard);
+      console.log('[CLIENT] Card calling effect cleanup');
     };
     // Removed calledCards.length from dependencies to prevent re-running on every card call
     // eslint-disable-next-line
-  }, [isHost, gameStarted, cardNames, intervalSec, isPaused, winner]);
+  }, [isHost, gameStarted, cardNames, intervalSec, isPaused, winner, lobbyHost, user.name]);
   // Listen for called card events from server and update deck from server
   useEffect(() => {
     const socket = getSocket();
@@ -251,6 +266,19 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
     
     // Join the lobby room on the server (socket auto-connects)
     socket.emit("join-lobby", lobbyCode, user.name);
+    
+    // Check if this user should be host and set it on the server
+    const checkAndSetHost = async () => {
+      const res = await fetch(`/api/lobbies?code=${lobbyCode}`);
+      const lobbies = await res.ok ? await res.json() : [];
+      const lobby = Array.isArray(lobbies) ? lobbies.find((l: any) => l.code === lobbyCode) : null;
+      if (lobby && lobby.host === user.name) {
+        socket.emit("set-host", { lobbyCode, host: user.name });
+        console.log('[CLIENT] Set as host on server');
+      }
+    };
+    checkAndSetHost();
+    
     // Listen for new players joining via socket
     socket.on("player-joined", (name: string) => {
       setPlayers((prev) => (prev.includes(name) ? prev : [...prev, name]));
@@ -262,8 +290,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
     socket.on("chat-message", (msg: { name: string; message: string }) => {
       setChat((prev) => [...prev, msg]);
     });
-    // Determine if user is host (first in player list)
-    setIsHost(players[0] === user.name);
+    
     // Listen for start-game event
     socket.on("start-game", (payload: { boards: { [name: string]: string[][] }, deck?: string[] }) => {
       console.log('[CLIENT] Received start-game payload:', payload);
@@ -283,13 +310,23 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       setShowBoard(true);
       setGameStarted(true); // Start the game for all players
     });
+    
     // Poll for player list from DB every 2 seconds for real-time updates
     const poll = setInterval(async () => {
-      const res = await fetch(`/api/lobbies`);
+      const res = await fetch(`/api/lobbies?code=${lobbyCode}`);
       const lobbies = await res.ok ? await res.json() : [];
       const lobby = Array.isArray(lobbies) ? lobbies.find((l: any) => l.code === lobbyCode) : null;
       if (lobby && Array.isArray(lobby.players)) {
         setPlayers(lobby.players);
+        // Set lobby host information
+        if (lobby.host) {
+          setLobbyHost(lobby.host);
+          setIsHost(lobby.host === user.name);
+        } else {
+          // Fallback: if no host is set, use first player (legacy behavior)
+          setLobbyHost(lobby.players[0] || null);
+          setIsHost(lobby.players[0] === user.name);
+        }
       }
     }, 2000);
     // Cleanup on unmount

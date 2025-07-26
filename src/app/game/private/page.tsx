@@ -65,7 +65,7 @@ export default function PrivateLobbyPage() {
     await fetch("/api/lobbies", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code, players: [userName] }),
+      body: JSON.stringify({ code, players: [userName], host: userName }),
     });
     setLobbyCode(code);
     setJoined(true);
