@@ -138,7 +138,8 @@ export function getCardImageForDeck(cardName: string, deckThemeId: string): stri
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'deessrmbv';
   const isVercelProduction = window.location.hostname.includes('vercel.app');
   const isProductionBuild = process.env.NODE_ENV === 'production';
-  const useCloudinary = isVercelProduction || (isProductionBuild && window.location.hostname !== 'localhost');
+  // Force Cloudinary for any production environment or Vercel deployment
+  const useCloudinary = isVercelProduction || isProductionBuild;
   
   // Debug logging (remove after testing)
   console.log('[cardMappings] Environment check:', {
