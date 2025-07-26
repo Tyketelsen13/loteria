@@ -129,10 +129,23 @@ export function getCardImageForDeck(cardName: string, deckThemeId: string): stri
   }
 
   // Use Cloudinary URLs in production (when CLOUDINARY_CLOUD_NAME is set)
-  const useCloudinary = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME && process.env.NODE_ENV === 'production';
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'deessrmbv'; // Fallback to known cloud name
+  const nodeEnv = process.env.NODE_ENV;
+  const isProduction = nodeEnv === 'production' || typeof window !== 'undefined' && window.location.hostname.includes('vercel.app');
+  const useCloudinary = cloudName && isProduction;
+  
+  // Debug logging (remove after testing)
+  console.log('[cardMappings] Environment check:', {
+    cardName,
+    deckThemeId,
+    cloudName: cloudName ? 'set' : 'not set',
+    nodeEnv,
+    isProduction,
+    useCloudinary,
+    hostname: typeof window !== 'undefined' ? window.location.hostname : 'server'
+  });
   
   if (useCloudinary) {
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
     const baseUrl = `https://res.cloudinary.com/${cloudName}/image/upload/f_auto,q_auto/loteria-cards`;
     
     switch (deckThemeId) {
