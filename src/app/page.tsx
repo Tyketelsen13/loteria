@@ -107,29 +107,29 @@ export default function Home() {
         </div>
         {/* User Info Card */}
         <UserInfo />
-        {/* Action Cards - styled as vintage buttons with improved one-line layout */}
-        <div className="w-full mt-4 max-w-6xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        {/* Action Cards - styled as vintage buttons with improved one-line layout and perfect centering */}
+        <div className="w-full mt-4 max-w-6xl mx-auto flex justify-center">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 place-items-center">
             {/* Join Game Card */}
-            <Link href="/game/join" className="group bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-6 px-4 rounded-xl flex flex-col items-center gap-3 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 min-h-[120px] justify-center border-2 border-blue-500 hover:border-blue-400">
+            <Link href="/game/join" className="group bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-6 px-4 rounded-xl flex flex-col items-center gap-3 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 min-h-[120px] justify-center border-2 border-blue-500 hover:border-blue-400 w-full">
               <FaGamepad className="text-3xl group-hover:scale-110 transition-transform duration-300" />
               <span className="text-base font-bold tracking-wide text-center leading-tight">Join Game</span>
             </Link>
             
             {/* Create Game Card */}
-            <Link href="/game/create" className="group bg-gradient-to-br from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-6 px-4 rounded-xl flex flex-col items-center gap-3 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 min-h-[120px] justify-center border-2 border-green-500 hover:border-green-400">
+            <Link href="/game/create" className="group bg-gradient-to-br from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-6 px-4 rounded-xl flex flex-col items-center gap-3 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 min-h-[120px] justify-center border-2 border-green-500 hover:border-green-400 w-full">
               <FaPlus className="text-3xl group-hover:scale-110 transition-transform duration-300" />
               <span className="text-base font-bold tracking-wide text-center leading-tight">Create Game</span>
             </Link>
             
             {/* Private Lobby Card */}
-            <Link href="/game/private" className="group bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-semibold py-6 px-4 rounded-xl flex flex-col items-center gap-3 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 min-h-[120px] justify-center border-2 border-purple-500 hover:border-purple-400">
+            <Link href="/game/private" className="group bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-semibold py-6 px-4 rounded-xl flex flex-col items-center gap-3 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 min-h-[120px] justify-center border-2 border-purple-500 hover:border-purple-400 w-full">
               <FaLock className="text-3xl group-hover:scale-110 transition-transform duration-300" />
               <span className="text-base font-bold tracking-wide text-center leading-tight">Private Lobby</span>
             </Link>
             
             {/* AI Game Card - Enhanced and Bigger */}
-            <Link href="/game/ai" className="group bg-gradient-to-br from-pink-600 to-pink-700 hover:from-pink-700 hover:to-pink-800 text-white font-semibold py-8 px-6 rounded-xl flex flex-col items-center gap-4 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-110 min-h-[140px] justify-center border-2 border-pink-500 hover:border-pink-400 relative overflow-hidden">
+            <Link href="/game/ai" className="group bg-gradient-to-br from-pink-600 to-pink-700 hover:from-pink-700 hover:to-pink-800 text-white font-semibold py-8 px-6 rounded-xl flex flex-col items-center gap-4 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-110 min-h-[140px] justify-center border-2 border-pink-500 hover:border-pink-400 relative overflow-hidden w-full">
               {/* Background glow effect */}
               <div className="absolute inset-0 bg-gradient-to-br from-pink-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <FaRobot className="text-4xl group-hover:scale-125 transition-transform duration-300 relative z-10" />
