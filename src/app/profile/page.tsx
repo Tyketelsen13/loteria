@@ -88,7 +88,7 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
-          <p className="text-gray-600">No profile data available</p>
+          <p className="text-gray-600">No profile data available. Coming soon!</p>
         </div>
       </div>
     );
