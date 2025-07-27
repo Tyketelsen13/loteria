@@ -7,7 +7,7 @@ describe('CopyrightFooter Component', () => {
     render(<CopyrightFooter />)
     
     const copyrightSymbol = screen.getByText('©')
-    const authorText = screen.getByText('ketelsencoding')
+    const authorText = screen.getByText('Ketelsencoding')
     expect(copyrightSymbol).toBeInTheDocument()
     expect(authorText).toBeInTheDocument()
   })
@@ -15,21 +15,21 @@ describe('CopyrightFooter Component', () => {
   it('is positioned at the bottom of the screen', () => {
     render(<CopyrightFooter />)
     
-    const footer = screen.getByText('ketelsencoding').closest('div')
+    const footer = screen.getByText('Ketelsencoding').closest('div')
     expect(footer).toHaveClass('fixed', 'bottom-4')
   })
 
   it('is positioned on the right side', () => {
     render(<CopyrightFooter />)
     
-    const footer = screen.getByText('ketelsencoding').closest('div')
+    const footer = screen.getByText('Ketelsencoding').closest('div')
     expect(footer).toHaveClass('right-4')
   })
 
   it('has appropriate styling classes', () => {
     render(<CopyrightFooter />)
     
-    const footer = screen.getByText('ketelsencoding').closest('div')
+    const footer = screen.getByText('Ketelsencoding').closest('div')
     expect(footer).toHaveClass('z-50', 'bg-white/80')
   })
 
@@ -44,17 +44,17 @@ describe('CopyrightFooter Component', () => {
   it('renders consistently', () => {
     const { rerender } = render(<CopyrightFooter />)
     
-    expect(screen.getByText('ketelsencoding')).toBeInTheDocument()
+    expect(screen.getByText('Ketelsencoding')).toBeInTheDocument()
     
     // Re-render should produce same result
     rerender(<CopyrightFooter />)
-    expect(screen.getByText('ketelsencoding')).toBeInTheDocument()
+    expect(screen.getByText('Ketelsencoding')).toBeInTheDocument()
   })
 
   it('has correct semantic structure', () => {
     render(<CopyrightFooter />)
     
-    const footer = screen.getByText('ketelsencoding').closest('div')
+    const footer = screen.getByText('Ketelsencoding').closest('div')
     
     // Should be a proper footer-type element structure
     expect(footer).toBeInTheDocument()
