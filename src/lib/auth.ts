@@ -10,7 +10,8 @@ const skipDB = process.env.SKIP_DB_VALIDATION === "true" &&
               (process.env.VERCEL_ENV === "preview" || process.env.NODE_ENV !== "production");
 
 export const authOptions: NextAuthOptions = {
-  adapter: skipDB ? undefined : MongoDBAdapter(clientPromise),
+  // Temporarily disable MongoDB adapter to test JWT-only sessions
+  // adapter: skipDB ? undefined : MongoDBAdapter(clientPromise),
   providers: [
     CredentialsProvider({
       name: "Credentials",
