@@ -31,7 +31,7 @@ export default function ProfilePage() {
       setUser(data);
     } else {
       console.error('Failed to load profile:', data.error);
-      setError('Failed to load profile. Please try signing in again.');
+      setError('Failed to load profile. Please try signing in.');
     }
   };
 
@@ -49,20 +49,38 @@ export default function ProfilePage() {
     return <div className="p-6">Loading authentication...</div>;
   }
 
-  // Redirect to sign in if not authenticated
+  // Show different content based on authentication status
   if (status === 'unauthenticated') {
-    console.log('Profile page - User not authenticated, showing sign in prompt');
+    console.log('Profile page - User not authenticated, showing guest view');
     return (
       <div className="p-6 max-w-xl mx-auto text-center">
-        <h2 className="text-2xl font-bold mb-4">Please Sign In</h2>
-        <p className="text-gray-600 mb-4">You need to be signed in to view your profile.</p>
-        <p className="text-sm text-gray-500 mb-4">Session status: {status}</p>
-        <button
-          onClick={() => signIn()}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          Sign In
-        </button>
+        <h2 className="text-2xl font-bold mb-4">Profile Page</h2>
+        <div className="mb-6">
+          <Avatar size={100} />
+        </div>
+        <p className="text-gray-600 mb-4">Sign in to access your profile and generate custom avatars!</p>
+        <div className="space-y-4">
+          <button
+            onClick={() => signIn()}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full"
+          >
+            Sign In
+          </button>
+          <p className="text-sm text-gray-500">
+            Don't have an account? <a href="/auth/signup" className="text-blue-600 hover:underline">Sign up here</a>
+          </p>
+        </div>
+        
+        {/* Demo content for non-authenticated users */}
+        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+          <h3 className="font-semibold mb-2">What you can do with an account:</h3>
+          <ul className="text-sm text-gray-600 space-y-1">
+            <li>• Generate AI-powered avatars</li>
+            <li>• Upload custom profile pictures</li>
+            <li>• Save your game progress</li>
+            <li>• Customize your gaming experience</li>
+          </ul>
+        </div>
       </div>
     );
   }
