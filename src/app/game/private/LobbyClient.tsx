@@ -126,6 +126,9 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
   const [isReady, setIsReady] = useState(false);
   // Whether all players are ready (for host to know when to start calling)
   const [allPlayersReady, setAllPlayersReady] = useState(false);
+  // Connection status monitoring
+  const [socketConnected, setSocketConnected] = useState(true);
+  const [lastCardTime, setLastCardTime] = useState<number | null>(null);
 
   // --- Host controls ---
   // Card calling interval (seconds)
@@ -161,9 +164,12 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
     
     let timeoutId: NodeJS.Timeout | null = null;
     let fallbackTimeoutId: NodeJS.Timeout | null = null;
+    let heartbeatId: NodeJS.Timeout | null = null;
     let cancelled = false;
     let isFirstCall = calledCards.length === 0;
     let waitingForConfirmation = false;
+    let lastCallTime = Date.now();
+    let consecutiveFailures = 0;
     
     console.log('[CLIENT] Host starting card calling logic');
     
@@ -179,24 +185,67 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       const next = remaining[Math.floor(Math.random() * remaining.length)];
       const socket = getSocket();
       
+      // Check if socket is connected before emitting
+      if (!socket.connected) {
+        console.log('[CLIENT] Socket disconnected, attempting reconnection...');
+        socket.connect();
+        // Retry after a short delay
+        timeoutId = setTimeout(() => {
+          if (!cancelled) callNextCard();
+        }, 2000);
+        return;
+      }
+      
       console.log('[CLIENT] Host calling card:', next);
       waitingForConfirmation = true;
+      lastCallTime = Date.now();
       socket.emit("call-card", { lobbyCode, card: next });
       
-      // Fallback timeout in case server doesn't respond
+      // Shorter fallback timeout with retry logic
       fallbackTimeoutId = setTimeout(() => {
         if (cancelled) return;
-        console.log('[CLIENT] No server confirmation received, continuing anyway');
-        waitingForConfirmation = false;
-        scheduleNext();
-      }, 5000); // 5 second fallback
+        consecutiveFailures++;
+        console.log(`[CLIENT] No server confirmation received (failure ${consecutiveFailures}/3), retrying...`);
+        
+        if (consecutiveFailures >= 3) {
+          console.log('[CLIENT] Too many failures, forcing continuation');
+          waitingForConfirmation = false;
+          consecutiveFailures = 0;
+          scheduleNext();
+        } else {
+          // Retry the same card
+          waitingForConfirmation = false;
+          callNextCard();
+        }
+      }, 3000); // Reduced to 3 seconds
     }
     
     function scheduleNext() {
       if (cancelled) return;
+      // Add some jitter to prevent synchronized calls
+      const jitter = Math.random() * 500; // 0-500ms jitter
       timeoutId = setTimeout(() => {
         callNextCard();
-      }, intervalSec * 1000);
+      }, (intervalSec * 1000) + jitter);
+    }
+    
+    // Heartbeat to detect if card calling has stalled
+    function startHeartbeat() {
+      heartbeatId = setInterval(() => {
+        if (cancelled || !waitingForConfirmation) return;
+        
+        const timeSinceLastCall = Date.now() - lastCallTime;
+        if (timeSinceLastCall > 10000) { // 10 seconds
+          console.log('[CLIENT] Card calling seems stuck, forcing recovery...');
+          waitingForConfirmation = false;
+          consecutiveFailures = 0;
+          if (fallbackTimeoutId) {
+            clearTimeout(fallbackTimeoutId);
+            fallbackTimeoutId = null;
+          }
+          scheduleNext();
+        }
+      }, 5000); // Check every 5 seconds
     }
     
     // Listen for confirmation from server before scheduling next
@@ -206,13 +255,44 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       if (cancelled) return;
       
       waitingForConfirmation = false;
+      consecutiveFailures = 0; // Reset failure counter on success
       if (fallbackTimeoutId) {
         clearTimeout(fallbackTimeoutId);
         fallbackTimeoutId = null;
       }
       scheduleNext();
     }
+    
+    // Listen for socket disconnection
+    function onDisconnect() {
+      console.log('[CLIENT] Socket disconnected during card calling');
+      if (!cancelled) {
+        waitingForConfirmation = false;
+        // Attempt reconnection after a delay
+        setTimeout(() => {
+          if (!cancelled && socket && !socket.connected) {
+            console.log('[CLIENT] Attempting to reconnect socket...');
+            socket.connect();
+          }
+        }, 2000);
+      }
+    }
+    
+    // Listen for socket reconnection
+    function onReconnect() {
+      console.log('[CLIENT] Socket reconnected, resuming card calling');
+      if (!cancelled && !waitingForConfirmation) {
+        consecutiveFailures = 0;
+        scheduleNext();
+      }
+    }
+    
     socket.on("called-card", onCalledCard);
+    socket.on("disconnect", onDisconnect);
+    socket.on("connect", onReconnect);
+    
+    // Start heartbeat monitoring
+    startHeartbeat();
     
     // Start the first call immediately if no cards have been called
     if (isFirstCall) {
@@ -226,7 +306,10 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       waitingForConfirmation = false;
       if (timeoutId) clearTimeout(timeoutId);
       if (fallbackTimeoutId) clearTimeout(fallbackTimeoutId);
+      if (heartbeatId) clearInterval(heartbeatId);
       socket.off("called-card", onCalledCard);
+      socket.off("disconnect", onDisconnect);
+      socket.off("connect", onReconnect);
       console.log('[CLIENT] Card calling effect cleanup');
     };
     // Removed calledCards.length from dependencies to prevent re-running on every card call
@@ -238,6 +321,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
     socket.on("called-cards", (cards: string[]) => {
       console.log('[CLIENT] Received called-cards update:', cards.length, 'cards');
       setCalledCards(cards);
+      setLastCardTime(Date.now()); // Track when last card was received
     });
     socket.on("mark-card", (payload: { player: string; row: number; col: number }) => {
       const { player, row, col } = payload;
@@ -300,6 +384,39 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
     return () => {
       socket.off("player-ready");
       socket.off("all-players-ready");
+    };
+  }, []);
+
+  // Monitor socket connection status
+  useEffect(() => {
+    const socket = getSocket();
+    
+    function onConnect() {
+      console.log('[CLIENT] Socket connected');
+      setSocketConnected(true);
+    }
+    
+    function onDisconnect() {
+      console.log('[CLIENT] Socket disconnected');
+      setSocketConnected(false);
+    }
+    
+    function onConnectError(error: any) {
+      console.log('[CLIENT] Socket connection error:', error);
+      setSocketConnected(false);
+    }
+    
+    // Set initial state
+    setSocketConnected(socket.connected);
+    
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
+    socket.on("connect_error", onConnectError);
+    
+    return () => {
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
+      socket.off("connect_error", onConnectError);
     };
   }, []);
 
@@ -674,8 +791,36 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                 
                 {/* Show when all players are ready and cards are being called */}
                 {gameStarted && allPlayersReady && (
-                  <div className="text-center mb-4 p-3 bg-green-100 border border-green-400 rounded-lg">
-                    <p className="text-green-800 font-semibold">🎮 Game is active! Cards are being called...</p>
+                  <div className="text-center mb-4 space-y-2">
+                    <div className="p-3 bg-green-100 border border-green-400 rounded-lg">
+                      <p className="text-green-800 font-semibold">🎮 Game is active! Cards are being called...</p>
+                    </div>
+                    
+                    {/* Connection and card calling status */}
+                    <div className="flex justify-center space-x-4 text-sm">
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded ${
+                        socketConnected 
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-red-100 text-red-700'
+                      }`}>
+                        <span className={`w-2 h-2 rounded-full ${
+                          socketConnected ? 'bg-green-500' : 'bg-red-500'
+                        }`}></span>
+                        {socketConnected ? 'Connected' : 'Disconnected'}
+                      </div>
+                      
+                      {lastCardTime && (
+                        <div className="flex items-center gap-1 px-2 py-1 rounded bg-blue-100 text-blue-700">
+                          <span className="text-xs">⏱️</span>
+                          Last card: {Math.floor((Date.now() - lastCardTime) / 1000)}s ago
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center gap-1 px-2 py-1 rounded bg-gray-100 text-gray-700">
+                        <span className="text-xs">🎯</span>
+                        {calledCards.length}/{cardNames.length} called
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -840,6 +985,42 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                       </span>
                       <span className="tracking-wide text-sm">
                         Call Card
+                      </span>
+                    </button>
+                    <button
+                      className="flex items-center gap-2 px-4 py-2 rounded-full font-semibold border-2 shadow transition-all duration-200
+                        bg-red-500 hover:bg-red-600 border-red-400 text-white
+                        hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-300"
+                      onClick={() => {
+                        console.log('[CLIENT] Fix calling clicked - forcing recovery');
+                        const socket = getSocket();
+                        
+                        // Force reconnect if needed
+                        if (!socket.connected) {
+                          console.log('[CLIENT] Reconnecting socket...');
+                          socket.connect();
+                        }
+                        
+                        // Send a heartbeat to the server
+                        socket.emit("heartbeat", { lobbyCode, player: user.name });
+                        
+                        // Manually trigger the next card after a short delay
+                        setTimeout(() => {
+                          const remaining = cardNames.filter(c => !calledCards.includes(c));
+                          if (remaining.length > 0) {
+                            const next = remaining[Math.floor(Math.random() * remaining.length)];
+                            console.log('[CLIENT] Recovery call card:', next);
+                            socket.emit("call-card", { lobbyCode, card: next });
+                          }
+                        }, 1000);
+                      }}
+                      title="Fix card calling if it gets stuck - forces reconnection and resumes calling"
+                    >
+                      <span className="text-lg">
+                        🔧
+                      </span>
+                      <span className="tracking-wide text-sm">
+                        Fix Calling
                       </span>
                     </button>
                     <button
