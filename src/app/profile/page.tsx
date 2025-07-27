@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import Avatar from '@/components/Avatar';
+import Avatar from '@/components/Avatar'; // optional, not used if we just render <img>
 import Link from 'next/link';
 
 interface UserProfile {
@@ -20,19 +20,17 @@ export default function ProfilePage() {
 
   const fetchUserData = async () => {
     try {
-      // Fetch real user data from the database
       const res = await fetch('/api/user-profile');
       const data = await res.json();
       
       if (data.status === 'ok' && data.user) {
-        // Use the real user data from the database
         setUser({
           name: data.user.name,
           email: data.user.email,
+          image: data.user.image,
           isAuthenticated: true
         });
       } else {
-        // Fallback to mock data if no users in database
         setUser({
           name: 'Sample User',
           email: 'sample@example.com',
@@ -41,7 +39,6 @@ export default function ProfilePage() {
       }
     } catch (err) {
       console.error('Failed to fetch user data:', err);
-      // Fallback to mock data on error
       setUser({
         name: 'Sample User',
         email: 'sample@example.com',
@@ -54,9 +51,8 @@ export default function ProfilePage() {
 
   useEffect(() => {
     fetchUserData();
-  }, [session]); // Re-fetch when session changes
+  }, [session]);
 
-  // Simple avatar component with first letter
   const LetterAvatar = ({ name, size = 100 }: { name?: string; size?: number }) => {
     const firstLetter = name ? name.charAt(0).toUpperCase() : 'U';
     const colors = [
@@ -96,22 +92,36 @@ export default function ProfilePage() {
       <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="p-8">
           <div className="text-center">
-            <LetterAvatar name={user.name} size={120} />
-            
-            <h1 className="mt-4 text-2xl font-bold text-gray-900">
-              {user.name}
-            </h1>
-            
-            <p className="mt-2 text-gray-600">
-              {user.email}
-            </p>
-            
+
+            {/* ✅ Avatar or Fallback */}
+            {user.image ? (
+              <img
+                src={user.image}
+                alt="Profile avatar"
+                width={120}
+                height={120}
+                className="rounded-full mx-auto object-cover border border-gray-300"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  target.style.display = 'none';
+                }}
+              />
+            ) : (
+              <LetterAvatar name={user.name} size={120} />
+            )}
+
+            {/* ✅ Name & Email */}
+            <h1 className="mt-4 text-2xl font-bold text-gray-900">{user.name}</h1>
+            <p className="mt-2 text-gray-600">{user.email}</p>
+
+            {/* ✅ Error if any */}
             {user.error && (
               <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
                 <p className="text-sm text-red-600">{user.error}</p>
               </div>
             )}
-            
+
+            {/* ✅ Status + Sign In Prompt */}
             <div className="mt-6 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Status:</span>
@@ -119,7 +129,7 @@ export default function ProfilePage() {
                   {user.isAuthenticated ? "Authenticated" : "Guest"}
                 </span>
               </div>
-              
+
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Session:</span>
                 <span className={session ? "text-green-600" : "text-red-600"}>
@@ -127,7 +137,8 @@ export default function ProfilePage() {
                 </span>
               </div>
             </div>
-            
+
+            {/* ✅ Sign-in Options if Not Authenticated */}
             {!user.isAuthenticated && (
               <div className="mt-6 space-y-3">
                 <p className="text-sm text-gray-500">Sign in to see your personal profile</p>
@@ -147,12 +158,13 @@ export default function ProfilePage() {
                 </div>
               </div>
             )}
-            
+
             <div className="mt-8 pt-6 border-t border-gray-200">
               <p className="text-sm text-gray-500">
                 Welcome to Lotería! This is your personal profile page.
               </p>
             </div>
+
           </div>
         </div>
       </div>
