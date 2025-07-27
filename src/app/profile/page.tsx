@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSession, signIn } from 'next-auth/react';
-import ProfileMenu from '@/components/ProfileMenu'; // adjust path as needed
 import Avatar from '@/components/Avatar';
 
 interface UserProfile {
@@ -12,186 +10,80 @@ interface UserProfile {
 }
 
 export default function ProfilePage() {
-  const { data: session, status } = useSession();
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [prompt, setPrompt] = useState('');
-  const [file, setFile] = useState<File | null>(null);
 
-  const fetchProfile = async () => {
-    const res = await fetch('/api/profile', {
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setUser(data);
-    } else {
-      console.error('Failed to load profile:', data.error);
-      setError('Failed to load profile. Please try signing in.');
-    }
+  // Mock user data - replace with actual data source as needed
+  const mockUser: UserProfile = {
+    name: 'John Doe',
+    email: 'john.doe@example.com'
   };
 
   useEffect(() => {
-    console.log('Profile page - Session status:', status);
-    console.log('Profile page - Session data:', session);
-    
-    if (status === 'authenticated') {
-      fetchProfile();
-    }
-  }, [status]);
+    // Simulate loading and set mock user data
+    setTimeout(() => {
+      setUser(mockUser);
+      setLoading(false);
+    }, 500);
+  }, []);
 
-  // Show loading while checking authentication
-  if (status === 'loading') {
-    return <div className="p-6">Loading authentication...</div>;
-  }
+  // Simple avatar component with first letter
+  const LetterAvatar = ({ name, size = 100 }: { name?: string; size?: number }) => {
+    const firstLetter = name ? name.charAt(0).toUpperCase() : 'U';
+    const colors = [
+      'bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 
+      'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500'
+    ];
+    const colorIndex = name ? name.charCodeAt(0) % colors.length : 0;
+    const bgColor = colors[colorIndex];
 
-  // Show different content based on authentication status
-  if (status === 'unauthenticated') {
-    console.log('Profile page - User not authenticated, showing guest view');
     return (
-      <div className="p-6 max-w-xl mx-auto text-center">
-        <h2 className="text-2xl font-bold mb-4">Profile Page</h2>
-        <div className="mb-6">
-          <Avatar size={100} />
-        </div>
-        <p className="text-gray-600 mb-4">Sign in to access your profile and generate custom avatars!</p>
-        <div className="space-y-4">
-          <button
-            onClick={() => signIn()}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full"
-          >
-            Sign In
-          </button>
-          <p className="text-sm text-gray-500">
-            Don't have an account? <a href="/auth/signup" className="text-blue-600 hover:underline">Sign up here</a>
-          </p>
-        </div>
-        
-        {/* Demo content for non-authenticated users */}
-        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <h3 className="font-semibold mb-2">What you can do with an account:</h3>
-          <ul className="text-sm text-gray-600 space-y-1">
-            <li>• Generate AI-powered avatars</li>
-            <li>• Upload custom profile pictures</li>
-            <li>• Save your game progress</li>
-            <li>• Customize your gaming experience</li>
-          </ul>
-        </div>
+      <div 
+        className={`${bgColor} rounded-full flex items-center justify-center text-white font-bold`}
+        style={{ width: size, height: size, fontSize: size * 0.4 }}
+      >
+        {firstLetter}
       </div>
     );
+  };
+
+  if (loading) {
+    return <div className="p-6 text-center">Loading profile...</div>;
   }
 
-  const handleGenerateAvatar = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await fetch('/api/avatar', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ generateAI: true, customPrompt: prompt }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        await fetchProfile();
-        setPrompt('');
-      } else {
-        setError(data.error || 'Failed to generate avatar');
-      }
-    } catch (err) {
-      setError('Error generating avatar');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleUploadAvatar = async () => {
-    if (!file) {
-      setError('Please select a file first');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-    const formData = new FormData();
-    formData.append('avatar', file);
-
-    try {
-      const res = await fetch('/api/avatar', {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        await fetchProfile();
-        setFile(null);
-      } else {
-        setError(data.error || 'Upload failed');
-      }
-    } catch (err) {
-      setError('Error uploading avatar');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (!user) {
-    return <div className="p-6">Loading profile...</div>;
+    return <div className="p-6 text-center text-red-500">Failed to load profile</div>;
   }
 
   return (
-    <div className="p-6 max-w-xl mx-auto space-y-6">
-      <div className="flex items-center gap-6">
-        <Avatar imageUrl={user.image} size={100} />
-        <div>
-          <h2 className="text-2xl font-bold">{user.name || 'Lotería Player'}</h2>
-          <p className="text-gray-600">{user.email}</p>
+    <div className="p-6 max-w-xl mx-auto">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold mb-8">Profile</h1>
+        
+        <div className="flex flex-col items-center space-y-6">
+          {/* Profile Picture */}
+          <LetterAvatar name={user.name} size={120} />
+          
+          {/* User Info */}
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl font-semibold text-gray-800">
+              {user.name || 'User'}
+            </h2>
+            <p className="text-gray-600 text-lg">
+              {user.email}
+            </p>
+          </div>
+        </div>
+
+        {/* Optional: Additional profile sections */}
+        <div className="mt-8 p-6 bg-gray-50 rounded-lg">
+          <h3 className="text-lg font-semibold mb-4">About</h3>
+          <p className="text-gray-600">
+            Welcome to your profile page! This is where you can view your account information.
+          </p>
         </div>
       </div>
-
-      <div className="space-y-4">
-        <h3 className="font-semibold">Generate AI Avatar</h3>
-        <input
-          type="text"
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Describe your avatar (optional)"
-          className="border rounded px-3 py-2 w-full"
-        />
-        <button
-          onClick={handleGenerateAvatar}
-          disabled={loading}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-        >
-          {loading ? 'Generating...' : 'Generate with AI'}
-        </button>
-      </div>
-
-      <div className="space-y-2">
-        <h3 className="font-semibold">Upload Avatar</h3>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setFile(e.target.files?.[0] || null)}
-          className="border rounded px-3 py-2 w-full"
-        />
-        <button
-          onClick={handleUploadAvatar}
-          disabled={loading}
-          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-        >
-          {loading ? 'Uploading...' : 'Upload Image'}
-        </button>
-      </div>
-
-      {error && <p className="text-red-500 mt-2">{error}</p>}
     </div>
   );
 }
