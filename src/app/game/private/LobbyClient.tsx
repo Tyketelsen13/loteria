@@ -122,10 +122,6 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
   const [marks, setMarks] = useState(Array(4).fill(null).map(() => Array(4).fill(false)));
   // Whether the game has started
   const [gameStarted, setGameStarted] = useState(false);
-  // Whether the user is ready to start calling cards
-  const [isReady, setIsReady] = useState(false);
-  // Whether all players are ready (for host to know when to start calling)
-  const [allPlayersReady, setAllPlayersReady] = useState(false);
   // Connection status monitoring
   const [socketConnected, setSocketConnected] = useState(true);
   const [lastCardTime, setLastCardTime] = useState<number | null>(null);
@@ -150,10 +146,10 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
 
   // Host: Start calling cards when gameStarted is true
 
-  // Host: Start calling cards when gameStarted is true, and not paused, and all players are ready
+  // Host: Start calling cards when gameStarted is true, and not paused
   // IMPORTANT: Only ONE client should run this (the actual host)
   useEffect(() => {
-    if (!isHost || !gameStarted || !allPlayersReady || isPaused || winner) return;
+    if (!isHost || !gameStarted || isPaused || winner) return;
     if (!cardNames.length) return;
     
     // Additional safety check: ensure only the real host calls cards
@@ -314,7 +310,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
     };
     // Removed calledCards.length from dependencies to prevent re-running on every card call
     // eslint-disable-next-line
-  }, [isHost, gameStarted, allPlayersReady, cardNames, intervalSec, isPaused, winner, lobbyHost, user.name]);
+  }, [isHost, gameStarted, cardNames, intervalSec, isPaused, winner, lobbyHost, user.name]);
   // Listen for called card events from server and update deck from server
   useEffect(() => {
     const socket = getSocket();
@@ -363,27 +359,9 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       setMarks(Array(4).fill(null).map(() => Array(4).fill(false)));
       setAllBoards({});
       setBoard(null);
-      setIsReady(false);
-      setAllPlayersReady(false);
     });
     return () => {
       socket.off("game-reset");
-    };
-  }, []);
-
-  // Listen for ready events from all players
-  useEffect(() => {
-    const socket = getSocket();
-    socket.on("player-ready", (data: { player: string, ready: boolean }) => {
-      console.log('[CLIENT] Player ready update:', data);
-    });
-    socket.on("all-players-ready", (ready: boolean) => {
-      console.log('[CLIENT] All players ready status:', ready);
-      setAllPlayersReady(ready);
-    });
-    return () => {
-      socket.off("player-ready");
-      socket.off("all-players-ready");
     };
   }, []);
 
@@ -761,56 +739,10 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                   />
                 </div>
               )}
-              {/* Game Controls: Ready button, Reset, Back, Lotería, and host controls */}
+              {/* Game Controls: Reset, Back, Lotería, and host controls */}
               <div className="flex flex-col gap-2 mt-6 mb-2 w-full">
-                {/* Ready Button - Show only when game has started but card calling hasn't begun */}
-                {gameStarted && !allPlayersReady && (
-                  <div className="flex flex-col items-center gap-2 mb-4">
-                    <button
-                      className={`px-8 py-4 text-2xl font-bold rounded-xl border-2 shadow-lg transition-all duration-200 ${
-                        isReady 
-                          ? 'bg-green-600 text-white border-green-800 cursor-default' 
-                          : 'bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-700 hover:scale-105'
-                      }`}
-                      onClick={() => {
-                        if (!isReady) {
-                          setIsReady(true);
-                          const socket = getSocket();
-                          
-                          // Mark this player as ready
-                          socket.emit("player-ready", { lobbyCode, player: user.name, ready: true });
-                          
-                          // Automatically mark all bots as ready
-                          bots.forEach(botName => {
-                            console.log('[CLIENT] Auto-readying bot:', botName);
-                            socket.emit("player-ready", { lobbyCode, player: botName, ready: true });
-                          });
-                          
-                          // Also mark any AI players that might have been added during game start
-                          const allPlayersInGame = [...players, ...bots];
-                          allPlayersInGame.forEach(playerName => {
-                            if (playerName.startsWith('AI ')) {
-                              console.log('[CLIENT] Auto-readying AI player:', playerName);
-                              socket.emit("player-ready", { lobbyCode, player: playerName, ready: true });
-                            }
-                          });
-                        }
-                      }}
-                      disabled={isReady}
-                    >
-                      {isReady ? '✅ Ready!' : '🎯 Ready to Play'}
-                    </button>
-                    <p className="text-sm text-gray-600 text-center">
-                      {isReady 
-                        ? 'Waiting for other players...' 
-                        : `Click when you're ready! ${bots.length > 0 ? '(Bots will auto-ready)' : ''}`
-                      }
-                    </p>
-                  </div>
-                )}
-                
-                {/* Show when all players are ready and cards are being called */}
-                {gameStarted && allPlayersReady && (
+                {/* Show when game is active and cards are being called */}
+                {gameStarted && (
                   <div className="text-center mb-4 space-y-2">
                     <div className="p-3 bg-green-100 border border-green-400 rounded-lg">
                       <p className="text-green-800 font-semibold">🎮 Game is active! Cards are being called...</p>
@@ -866,8 +798,6 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                       }
                       setMarks(Array(4).fill(null).map(() => Array(4).fill(false)));
                       setCalledCards([]);
-                      setIsReady(false);
-                      setAllPlayersReady(false);
                       setTimeout(() => setGameStarted(false), 0);
                     }}
                   >
@@ -941,7 +871,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                   </button>
                 </div>
                 {/* Host controls: interval slider and pause/resume - only show when cards are being called */}
-                {isHost && gameStarted && allPlayersReady && (
+                {isHost && gameStarted && (
                   <div className="flex flex-col gap-2 mt-2">
                     <label className="flex items-center gap-3 text-sm font-medium">
                       Card Interval:
@@ -1087,8 +1017,6 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                             setWinner(null);
                             setIsPaused(false);
                             setGameStarted(false);
-                            setIsReady(false);
-                            setAllPlayersReady(false);
                           }}
                         >
                           Close
