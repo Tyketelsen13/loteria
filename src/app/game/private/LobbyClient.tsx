@@ -776,7 +776,24 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                         if (!isReady) {
                           setIsReady(true);
                           const socket = getSocket();
+                          
+                          // Mark this player as ready
                           socket.emit("player-ready", { lobbyCode, player: user.name, ready: true });
+                          
+                          // Automatically mark all bots as ready
+                          bots.forEach(botName => {
+                            console.log('[CLIENT] Auto-readying bot:', botName);
+                            socket.emit("player-ready", { lobbyCode, player: botName, ready: true });
+                          });
+                          
+                          // Also mark any AI players that might have been added during game start
+                          const allPlayersInGame = [...players, ...bots];
+                          allPlayersInGame.forEach(playerName => {
+                            if (playerName.startsWith('AI ')) {
+                              console.log('[CLIENT] Auto-readying AI player:', playerName);
+                              socket.emit("player-ready", { lobbyCode, player: playerName, ready: true });
+                            }
+                          });
                         }
                       }}
                       disabled={isReady}
@@ -784,7 +801,10 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                       {isReady ? '✅ Ready!' : '🎯 Ready to Play'}
                     </button>
                     <p className="text-sm text-gray-600 text-center">
-                      {isReady ? 'Waiting for other players...' : 'Click when you\'re ready to start calling cards!'}
+                      {isReady 
+                        ? 'Waiting for other players...' 
+                        : `Click when you're ready! ${bots.length > 0 ? '(Bots will auto-ready)' : ''}`
+                      }
                     </p>
                   </div>
                 )}
