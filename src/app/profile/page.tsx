@@ -14,18 +14,39 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Mock user data - replace with actual data source as needed
-  const mockUser: UserProfile = {
-    name: 'John Doe',
-    email: 'john.doe@example.com'
+  const fetchUserData = async () => {
+    try {
+      // Fetch real user data from the database
+      const res = await fetch('/api/user-profile');
+      const data = await res.json();
+      
+      if (data.status === 'ok' && data.user) {
+        // Use the real user data from the database
+        setUser({
+          name: data.user.name,
+          email: data.user.email
+        });
+      } else {
+        // Fallback to mock data if no users in database
+        setUser({
+          name: 'Sample User',
+          email: 'sample@example.com'
+        });
+      }
+    } catch (err) {
+      console.error('Failed to fetch user data:', err);
+      // Fallback to mock data on error
+      setUser({
+        name: 'Sample User',
+        email: 'sample@example.com'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    // Simulate loading and set mock user data
-    setTimeout(() => {
-      setUser(mockUser);
-      setLoading(false);
-    }, 500);
+    fetchUserData();
   }, []);
 
   // Simple avatar component with first letter
