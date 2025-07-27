@@ -1,18 +1,22 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import Avatar from '@/components/Avatar';
+import Link from 'next/link';
 
 interface UserProfile {
   name?: string;
   email: string;
   image?: string;
+  isAuthenticated?: boolean;
+  error?: string;
 }
 
 export default function ProfilePage() {
+  const { data: session, status } = useSession();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   const fetchUserData = async () => {
     try {
@@ -24,13 +28,15 @@ export default function ProfilePage() {
         // Use the real user data from the database
         setUser({
           name: data.user.name,
-          email: data.user.email
+          email: data.user.email,
+          isAuthenticated: true
         });
       } else {
         // Fallback to mock data if no users in database
         setUser({
           name: 'Sample User',
-          email: 'sample@example.com'
+          email: 'sample@example.com',
+          isAuthenticated: false
         });
       }
     } catch (err) {
@@ -38,7 +44,8 @@ export default function ProfilePage() {
       // Fallback to mock data on error
       setUser({
         name: 'Sample User',
-        email: 'sample@example.com'
+        email: 'sample@example.com',
+        isAuthenticated: false
       });
     } finally {
       setLoading(false);
@@ -47,7 +54,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     fetchUserData();
-  }, []);
+  }, [session]); // Re-fetch when session changes
 
   // Simple avatar component with first letter
   const LetterAvatar = ({ name, size = 100 }: { name?: string; size?: number }) => {
@@ -69,8 +76,15 @@ export default function ProfilePage() {
     );
   };
 
-  if (loading) {
-    return <div className="p-6 text-center">Loading profile...</div>;
+  if (loading || status === 'loading') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading profile...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!user) {
@@ -78,31 +92,68 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="p-6 max-w-xl mx-auto">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold mb-8">Profile</h1>
-        
-        <div className="flex flex-col items-center space-y-6">
-          {/* Profile Picture */}
-          <LetterAvatar name={user.name} size={120} />
-          
-          {/* User Info */}
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl font-semibold text-gray-800">
-              {user.name || 'User'}
-            </h2>
-            <p className="text-gray-600 text-lg">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="p-8">
+          <div className="text-center">
+            <LetterAvatar name={user.name} size={120} />
+            
+            <h1 className="mt-4 text-2xl font-bold text-gray-900">
+              {user.name}
+            </h1>
+            
+            <p className="mt-2 text-gray-600">
               {user.email}
             </p>
+            
+            {user.error && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-600">{user.error}</p>
+              </div>
+            )}
+            
+            <div className="mt-6 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Status:</span>
+                <span className={user.isAuthenticated ? "text-green-600" : "text-orange-600"}>
+                  {user.isAuthenticated ? "Authenticated" : "Guest"}
+                </span>
+              </div>
+              
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Session:</span>
+                <span className={session ? "text-green-600" : "text-red-600"}>
+                  {session ? "Active" : "None"}
+                </span>
+              </div>
+            </div>
+            
+            {!user.isAuthenticated && (
+              <div className="mt-6 space-y-3">
+                <p className="text-sm text-gray-500">Sign in to see your personal profile</p>
+                <div className="space-y-2">
+                  <Link 
+                    href="/auth/signin"
+                    className="block w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                  <Link 
+                    href="/auth/signup"
+                    className="block w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                  >
+                    Create Account
+                  </Link>
+                </div>
+              </div>
+            )}
+            
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <p className="text-sm text-gray-500">
+                Welcome to Lotería! This is your personal profile page.
+              </p>
+            </div>
           </div>
-        </div>
-
-        {/* Optional: Additional profile sections */}
-        <div className="mt-8 p-6 bg-gray-50 rounded-lg">
-          <h3 className="text-lg font-semibold mb-4">About</h3>
-          <p className="text-gray-600">
-            Welcome to your profile page! This is where you can view your account information.
-          </p>
         </div>
       </div>
     </div>
