@@ -505,8 +505,8 @@ export const deckThemeOptions: DeckThemeOption[] = [
     id: 'paper-art',
     name: 'Paper Art',
     description: 'Handcrafted paper art style cards with vibrant cutout designs',
-    folder: 'loteria-cards',
-    preview: '/loteria-cards/el-corazon-paper-art.png'
+    folder: 'paper-art-theme',
+    preview: '/paper-art-theme/el-corazon-paper-art.png'
   },
   {
     id: 'horror',
