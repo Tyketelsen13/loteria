@@ -3,10 +3,12 @@
 const { createServer } = require("http");
 const { Server } = require("socket.io");
 
+// Set allowed CORS origin for production
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || 'https://loteria-frontend-ten.vercel.app';
 // Create a simple HTTP server for Socket.IO with CORS support
 const server = createServer((req, res) => {
   // Set CORS headers for all HTTP requests
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', FRONTEND_ORIGIN);
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -28,7 +30,7 @@ const server = createServer((req, res) => {
         path: '/api/socket/io',
         timestamp: new Date().toISOString(),
         activeLobbies: Object.keys(lobbyGames).length,
-        totalConnections: io.engine.clientsCount || 0
+        totalConnections: io.engine ? io.engine.clientsCount : 0
       }));
       return;
     }
@@ -42,11 +44,11 @@ const server = createServer((req, res) => {
   }
 });
 
-// Attach Socket.IO to the server with comprehensive CORS configuration
+// Attach Socket.IO to the server with CORS configuration for production
 const io = new Server(server, {
   path: "/api/socket/io",
   cors: {
-    origin: true, // Allow all origins in development
+    origin: FRONTEND_ORIGIN,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Origin", "X-Requested-With", "Content-Type", "Accept", "Authorization"],
     credentials: true,
