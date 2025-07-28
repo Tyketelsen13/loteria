@@ -299,9 +299,10 @@ app.prepare().then(() => {
           turnOrder,
           deck,
           turn: 0,
-          called: [],
+          called: [deck[0]], // Initialize with first card to prevent stuck games
           marks: {},
           winner: null,
+          activeWinners: null, // Added for tiebreaker support
           players: lobbyGames[lobbyCode]?.players || playerNames.map(
             (name) => ({ id: "", name })
           ),
@@ -313,25 +314,36 @@ app.prepare().then(() => {
           turnOrder,
           deck,
           turn: 0,
-          called: [],
+          called: [deck[0]], // Initialize with first card already called to prevent stuck games
           currentPlayer: turnOrder[0],
           card: deck[0],
         });
-        io.to(lobbyCode).emit("called-cards", []); // Reset called cards for all clients
+        // Store the first card as called in the game state
+        lobbyGames[lobbyCode].called = [deck[0]];
+        // Emit the first card as called so clients can mark their board
+        io.to(lobbyCode).emit("called-cards", [deck[0]]);
       }
     });
 
     // --- Marking Cards ---
     // Player marks a card on their board
     socket.on("mark-card", ({ lobbyCode, player, row, col }) => {
+      console.log('[SERVER] Received mark-card event:', { lobbyCode, player, row, col });
       const game = lobbyGames[lobbyCode];
-      if (!game) return;
+      if (!game) {
+        console.log('[SERVER] No game found for lobby:', lobbyCode);
+        return;
+      }
       if (!game.marks[player]) {
         game.marks[player] = Array(4).fill(null).map(() => Array(4).fill(false));
+        console.log('[SERVER] Initialized marks for player:', player);
       }
       // Toggle the mark state (same as AI game behavior)
+      const prevState = game.marks[player][row][col];
       game.marks[player][row][col] = !game.marks[player][row][col];
+      console.log('[SERVER] Toggled mark for', player, 'at', row, col, 'from', prevState, 'to', game.marks[player][row][col]);
       io.to(lobbyCode).emit("mark-card", { player, row, col });
+      console.log('[SERVER] Emitted mark-card event to lobby:', lobbyCode);
     });
 
     // --- Bingo Validation ---

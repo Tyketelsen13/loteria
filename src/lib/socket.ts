@@ -31,7 +31,7 @@ export function getSocket() {
     
     // Cross-origin configuration for Vercel + Render
     socket = io(baseUrl, {
-      path: "/socket.io", // Updated to match backend path
+      path: "/api/socket/io", // Fixed to match backend path in production
       transports: ["polling", "websocket"], // Try polling first, then websocket for better compatibility
       upgrade: true, // Allow transport upgrades
       autoConnect: true,

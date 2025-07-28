@@ -162,7 +162,13 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
 
     // Additional safety check: ensure only the real host calls cards
     if (lobbyHost && lobbyHost !== user.name) {
-      console.log('[CLIENT] Not the real host, skipping card calling');
+      console.log('[CLIENT] Not the real host, skipping card calling. lobbyHost:', lobbyHost, 'user.name:', user.name);
+      return;
+    }
+
+    // Extra check: only proceed if user is confirmed as host
+    if (!isHost) {
+      console.log('[CLIENT] isHost is false, skipping card calling');
       return;
     }
 
@@ -229,6 +235,9 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       console.log('[CLIENT] Host calling card:', next);
       waitingForConfirmation = true;
       lastCallTime = Date.now();
+      
+      console.log('[CLIENT] Socket connected?', socket.connected, 'Socket ID:', socket.id);
+      
       socket.emit("call-card", { lobbyCode, card: next });
 
       // Shorter fallback timeout with retry logic
@@ -359,6 +368,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
           console.log('[CLIENT] 🃏 Updated called cards:', newCalled);
           return newCalled;
         }
+        console.log('[CLIENT] Card already in called cards:', card);
         return prev;
       });
       announceCard(card);
@@ -961,11 +971,13 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                     marks={allMarks[user.name] || marks}
                     onMark={(row, col) => {
                       if (!board) return;
-                      console.log('[DEBUG] onMark called!', { row, col, player: user.name });
+                      console.log('[DEBUG] onMark called!', { row, col, player: user.name, lobbyCode });
+                      console.log('[DEBUG] Socket connected?', getSocket().connected, 'Socket ID:', getSocket().id);
                       // Only emit to server, don't update local state immediately
                       // Wait for server confirmation via "mark-card" event
                       const socket = getSocket();
                       socket.emit("mark-card", { lobbyCode, player: user.name, row, col });
+                      console.log('[DEBUG] Emitted mark-card event to server');
                     }}
                   />
                 </div>
