@@ -505,8 +505,8 @@ export const deckThemeOptions: DeckThemeOption[] = [
     id: 'paper-art',
     name: 'Paper Art',
     description: 'Handcrafted paper art style cards with vibrant cutout designs',
-    folder: 'custom-cards/paper-art',
-    preview: '/custom-cards/paper-art/el-corazon-paper-art.png'
+    folder: 'loteria-cards',
+    preview: '/loteria-cards/el-corazon-paper-art.png'
   },
   {
     id: 'horror',
@@ -528,12 +528,12 @@ export const deckThemeOptions: DeckThemeOption[] = [
 export const getDeckThemePreviewUrl = (themeId: string): string => {
   const theme = deckThemeOptions.find(opt => opt.id === themeId);
   if (!theme?.preview) return '';
-  
+
   // Only apply Cloudinary transformation on client-side in production
   if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
     switch (themeId) {
       case 'paper-art':
-        return 'https://res.cloudinary.com/deessrmbv/image/upload/paper-art/el-corazon-paper-art.png';
+        return 'https://res.cloudinary.com/deessrmbv/image/upload/paper-art-theme/el-corazon-paper-art.png';
       case 'cute-adorable':
         return 'https://res.cloudinary.com/deessrmbv/image/upload/68796740a83d8baf97ca977a/large-cute-and-adorable-mexican-loteria-deck-item-1-1752794219242.png';
       case 'dark-mysterious':
@@ -546,7 +546,7 @@ export const getDeckThemePreviewUrl = (themeId: string): string => {
         return theme.preview;
     }
   }
-  
+
   // Local development or non-Vercel environments use local files
   return theme.preview;
 };
