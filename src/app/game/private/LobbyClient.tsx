@@ -1039,21 +1039,32 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                     {/* Emergency manual card call for testing */}
                     {isHost && gameStarted && (
                       <div className="bg-yellow-100 dark:bg-yellow-900 p-2 rounded border">
-                        <div className="text-xs text-yellow-800 dark:text-yellow-200 mb-2">Debug: Manual Card Call</div>
+                        <div className="text-xs text-yellow-800 dark:text-yellow-200 mb-2">
+                          🎯 Debug: Manual Card Call ({cardNames.length} cards available)
+                        </div>
                         <button
-                          className="px-3 py-1 bg-yellow-500 text-white rounded text-xs"
+                          className="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded text-xs transition-colors"
                           onClick={() => {
                             console.log('[DEBUG] Manual card call button clicked');
+                            console.log('[DEBUG] Total card names:', cardNames.length);
+                            console.log('[DEBUG] Called cards:', calledCards.length);
                             const remaining = cardNames.filter(c => !calledCards.includes(c));
+                            console.log('[DEBUG] Remaining cards:', remaining.length, remaining.slice(0, 5));
+                            
                             if (remaining.length > 0) {
                               const next = remaining[Math.floor(Math.random() * remaining.length)];
                               console.log('[DEBUG] Manually calling card:', next);
                               const socket = getSocket();
+                              console.log('[DEBUG] Socket connected:', socket.connected, 'Socket ID:', socket.id);
                               socket.emit("call-card", { lobbyCode, card: next });
+                              console.log('[DEBUG] Emitted call-card event with:', { lobbyCode, card: next });
+                            } else {
+                              console.log('[DEBUG] No remaining cards to call!');
+                              alert('No remaining cards to call!');
                             }
                           }}
                         >
-                          Call Random Card
+                          🎴 Call Random Card ({cardNames.filter(c => !calledCards.includes(c)).length} left)
                         </button>
                       </div>
                     )}
@@ -1061,21 +1072,80 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                     {/* Manual mark test for debugging */}
                     {gameStarted && (
                       <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded border">
-                        <div className="text-xs text-blue-800 dark:text-blue-200 mb-2">Debug: Manual Mark Test</div>
+                        <div className="text-xs text-blue-800 dark:text-blue-200 mb-2">
+                          🎨 Debug: Manual Mark Test (Board: {board.length > 0 ? '✅' : '❌'})
+                        </div>
                         <button
-                          className="px-3 py-1 bg-blue-500 text-white rounded text-xs"
+                          className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs transition-colors"
                           onClick={() => {
                             console.log('[DEBUG] Manual mark test button clicked');
                             console.log('[DEBUG] Socket connected:', getSocket().connected);
+                            console.log('[DEBUG] Socket ID:', getSocket().id);
+                            console.log('[DEBUG] Board available:', board.length > 0);
+                            console.log('[DEBUG] Current board:', board);
+                            console.log('[DEBUG] Current marks:', marks);
+                            
                             const socket = getSocket();
-                            socket.emit("mark-card", { lobbyCode, player: user.name, row: 0, col: 0 });
-                            console.log('[DEBUG] Emitted mark-card for position 0,0');
+                            const markPayload = { 
+                              lobbyCode, 
+                              player: user.name, 
+                              row: 0, 
+                              col: 0,
+                              cardAtPosition: board[0]?.[0] || 'unknown'
+                            };
+                            
+                            console.log('[DEBUG] Emitting mark-card with payload:', markPayload);
+                            socket.emit("mark-card", markPayload);
+                            
+                            // Also try to mark locally to see if UI responds
+                            if (board.length > 0) {
+                              console.log('[DEBUG] Also attempting local mark toggle');
+                              const newMarks = marks.map((row, i) => 
+                                row.map((cell, j) => (i === 0 && j === 0) ? !cell : cell)
+                              );
+                              setMarks(newMarks);
+                              console.log('[DEBUG] Local mark state updated');
+                            }
                           }}
                         >
-                          Test Mark (0,0)
+                          🎯 Test Mark (0,0) - {board[0]?.[0] || 'No card'}
                         </button>
                       </div>
                     )}
+
+                    {/* Socket connectivity test */}
+                    <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded border">
+                      <div className="text-xs text-gray-800 dark:text-gray-200 mb-2">
+                        🔧 Socket Test (ID: {getSocket().id?.slice(0, 8) || 'None'})
+                      </div>
+                      <button
+                        className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs transition-colors"
+                        onClick={() => {
+                          console.log('[SOCKET TEST] Button clicked');
+                          const socket = getSocket();
+                          console.log('[SOCKET TEST] Socket connected:', socket.connected);
+                          console.log('[SOCKET TEST] Socket ID:', socket.id);
+                          console.log('[SOCKET TEST] Socket transport:', socket.io.engine?.transport?.name);
+                          
+                          // Test basic emission
+                          socket.emit('ping', { test: 'manual-test', timestamp: Date.now() });
+                          console.log('[SOCKET TEST] Emitted ping event');
+                          
+                          // Add a one-time listener for pong
+                          socket.once('pong', (data) => {
+                            console.log('[SOCKET TEST] Received pong:', data);
+                            alert('✅ Socket test successful! Check console for details.');
+                          });
+                          
+                          // Timeout if no response
+                          setTimeout(() => {
+                            console.log('[SOCKET TEST] No pong received within 5 seconds');
+                          }, 5000);
+                        }}
+                      >
+                        🔍 Test Socket Connection
+                      </button>
+                    </div>
 
                     {/* Show when game is active and cards are being called */}
                     {/* Removed connection status, last card time, and called cards count for cleaner UI */}                <div className="flex gap-4">
