@@ -852,23 +852,24 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       {/* App title */}
       <h1 className="text-4xl font-western font-extrabold text-center text-[#8c2f2b] dark:text-yellow-200 tracking-widest drop-shadow mb-8 mt-2 transition-colors">Lotería Multiplayer Lobby</h1>
       <div className="w-full max-w-6xl flex flex-col gap-8 items-center">
-        {/* Connection Status Indicator for debugging */}
-        <div className={`fixed top-4 right-4 z-50 px-3 py-1 rounded-full text-xs font-semibold ${
+        {/* 🔧 DEBUG: Connection Status Indicator */}
+        <div className={`fixed top-4 right-4 z-50 px-3 py-1 rounded-full text-xs font-semibold shadow-lg ${
           socketConnected ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
         }`}>
-          Socket: {socketConnected ? 'Connected' : 'Disconnected'}
+          🔌 {socketConnected ? 'Connected' : 'Disconnected'}
           {socketConnected && getSocket().id && (
             <span className="ml-1 text-xs opacity-75">({getSocket().id?.slice(0, 6)})</span>
           )}
         </div>
         
-        {/* Game Debug Info (only show when board is visible) */}
+        {/* 🎮 DEBUG: Game State Panel */}
         {showBoard && (
-          <div className="fixed top-4 left-4 z-50 bg-black/80 text-white p-2 rounded text-xs max-w-xs">
-            <div>Host: {isHost ? 'Yes' : 'No'} ({lobbyHost})</div>
-            <div>Started: {gameStarted ? 'Yes' : 'No'}</div>
-            <div>Called Cards: {calledCards.length}</div>
-            <div>Latest: {calledCards.length > 0 ? calledCards[calledCards.length - 1] : 'None'}</div>
+          <div className="fixed top-4 left-4 z-50 bg-black/90 text-white p-3 rounded-lg text-xs max-w-xs shadow-lg border border-white/20">
+            <div className="font-bold text-yellow-400 mb-1">🔧 DEBUG INFO</div>
+            <div>👤 Host: {isHost ? '✅ Yes' : '❌ No'} ({lobbyHost})</div>
+            <div>🚀 Started: {gameStarted ? '✅ Yes' : '❌ No'}</div>
+            <div>🎴 Called: {calledCards.length} cards</div>
+            <div>📋 Latest: {calledCards.length > 0 ? calledCards[calledCards.length - 1] : '⭕ None'}</div>
           </div>
         )}
         {/* Show lobby only if game has not started */}
