@@ -350,18 +350,18 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
   // Listen for called card events from server and update deck from server
   useEffect(() => {
     const socket = getSocket();
-    // Listen for individual card-called events from server (server-driven card calling)
-    socket.on("card-called", (payload: { cardId: string, cardIndex: number, totalCards: number }) => {
-      console.log('[CLIENT] 📢 Server called card:', payload);
+    // Listen for individual called-card events from server (server-driven card calling)
+    socket.on("called-card", (card: string) => {
+      console.log('[CLIENT] 📢 Server called card:', card);
       setCalledCards(prev => {
-        if (!prev.includes(payload.cardId)) {
-          const newCalled = [...prev, payload.cardId];
+        if (!prev.includes(card)) {
+          const newCalled = [...prev, card];
           console.log('[CLIENT] 🃏 Updated called cards:', newCalled);
           return newCalled;
         }
         return prev;
       });
-      announceCard(payload.cardId);
+      announceCard(card);
       setLastCardTime(Date.now());
     });
     // Listen for bulk called-cards updates (for sync)
@@ -393,7 +393,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       }
     });
     return () => {
-      socket.off("card-called");
+      socket.off("called-card");
       socket.off("called-cards");
       socket.off("mark-card");
     };
