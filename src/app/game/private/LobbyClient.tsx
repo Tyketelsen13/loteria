@@ -833,6 +833,90 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
     prevCalledCardsLen.current = calledCards.length;
   }, [calledCards]);
 
+  // Automatic card calling - starts when game begins and host
+  useEffect(() => {
+    if (!isHost || !gameStarted || winner) return;
+
+    const callNextCard = () => {
+      const remaining = cardNames.filter(c => !calledCards.includes(c));
+      
+      if (remaining.length > 0) {
+        const next = remaining[Math.floor(Math.random() * remaining.length)];
+        console.log('[AUTO] Automatically calling card:', next);
+        
+        // IMMEDIATE LOCAL UPDATE (fallback for broken backend)
+        setCalledCards(prev => {
+          const updated = [...prev, next];
+          console.log('[AUTO] ✅ Auto called cards update:', updated.length);
+          return updated;
+        });
+        
+        // Still try to emit to server (for when it's working)
+        const socket = getSocket();
+        if (socket.connected) {
+          socket.emit("call-card", { lobbyCode, card: next });
+        }
+      } else {
+        console.log('[AUTO] All cards have been called! Game complete.');
+      }
+    };
+
+    // Start calling cards automatically every 4 seconds
+    const interval = setInterval(callNextCard, 4000);
+
+    // Clean up interval when component unmounts or game ends
+    return () => clearInterval(interval);
+  }, [isHost, gameStarted, winner, lobbyCode, cardNames, calledCards]);
+
+  // Automatic win detection - check for wins whenever marks or called cards change
+  useEffect(() => {
+    if (!gameStarted || winner || !board || !board.length) return;
+    
+    const line = getWinningLine(marks);
+    const bingo = checkBingo(marks);
+    const validBingo = isValidBingo(board, marks, line, calledCards);
+    
+    // Only auto-win if we have a valid bingo and the last called card is part of the winning line
+    if (bingo && validBingo && calledCards.length > 0) {
+      const lastCalled = calledCards[calledCards.length - 1];
+      
+      // Get all cards in the winning line that are marked
+      let winningCards: { card: string, marked: boolean }[] = [];
+      if (line && line.type === 'row') winningCards = board[line.index].map((card, j) => ({ card, marked: marks[line.index][j] }));
+      else if (line && line.type === 'col') winningCards = board.map((row, i) => ({ card: row[line.index], marked: marks[i][line.index] }));
+      else if (line && line.type === 'diag1') winningCards = [0, 1, 2, 3].map(i => ({ card: board[i][i], marked: marks[i][i] }));
+      else if (line && line.type === 'diag2') winningCards = [0, 1, 2, 3].map(i => ({ card: board[i][3 - i], marked: marks[i][3 - i] }));
+      else if (line && line.type === 'corners') winningCards = [
+        { card: board[0][0], marked: marks[0][0] },
+        { card: board[0][3], marked: marks[0][3] },
+        { card: board[3][0], marked: marks[3][0] },
+        { card: board[3][3], marked: marks[3][3] }
+      ];
+      else if (line && line.type === 'center') winningCards = [
+        { card: board[1][1], marked: marks[1][1] },
+        { card: board[1][2], marked: marks[1][2] },
+        { card: board[2][1], marked: marks[2][1] },
+        { card: board[2][2], marked: marks[2][2] }
+      ];
+      
+      const lastCardInLine = winningCards.some(({ card, marked }) => marked && card === lastCalled);
+      
+      if (lastCardInLine) {
+        console.log('[AUTO-WIN] Valid Lotería detected! Automatically claiming win for:', user.name);
+        const socket = getSocket();
+        socket.emit("bingo", { lobbyCode, player: user.name });
+        
+        // Fallback: If server doesn't respond within 2 seconds, set winner locally
+        setTimeout(() => {
+          if (!winner) {
+            console.log('[AUTO-WIN] Server didn\'t respond, setting winner locally');
+            setWinner(user.name);
+          }
+        }, 2000);
+      }
+    }
+  }, [marks, calledCards, gameStarted, winner, board, user.name, lobbyCode]);
+
   // Main container for the multiplayer lobby and game UI with iOS optimizations
   const containerStyle = isIOS ? {
     minHeight: `${viewportHeight}px`,
@@ -847,28 +931,6 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       {/* App title */}
       <h1 className="text-4xl font-western font-extrabold text-center text-[#8c2f2b] dark:text-yellow-200 tracking-widest drop-shadow mb-8 mt-2 transition-colors">Lotería Multiplayer Lobby</h1>
       <div className="w-full max-w-6xl flex flex-col gap-8 items-center">
-        {/* 🔧 DEBUG: Connection Status Indicator */}
-        <div className={`fixed top-4 right-4 z-50 px-3 py-1 rounded-full text-xs font-semibold shadow-lg ${
-          socketConnected ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-        }`}>
-          🔌 {socketConnected ? 'Connected' : 'Disconnected'}
-          {socketConnected && getSocket().id && (
-            <span className="ml-1 text-xs opacity-75">({getSocket().id?.slice(0, 6)})</span>
-          )}
-        </div>
-        
-        {/* 🎮 DEBUG: Game State Panel */}
-        {showBoard && (
-          <div className="fixed top-4 left-4 z-50 bg-black/90 text-white p-3 rounded-lg text-xs max-w-xs shadow-lg border border-white/20">
-            <div className="font-bold text-yellow-400 mb-1">🔧 DEBUG INFO</div>
-            <div>👤 Host: {isHost ? '✅ Yes' : '❌ No'} ({lobbyHost})</div>
-            <div>🚀 Started: {gameStarted ? '✅ Yes' : '❌ No'}</div>
-            <div>🎴 Called: {calledCards.length} / 54 cards</div>
-            <div>📋 Latest: {calledCards.length > 0 ? calledCards[calledCards.length - 1] : '⭕ None'}</div>
-            <div>🎯 Display: {calledCards.length > 0 ? '✅ Showing' : '❌ Hidden'}</div>
-            <div className="text-yellow-300 mt-1">Card Display Test: {calledCards.length > 0 ? `Card #${calledCards.length}` : 'No cards yet'}</div>
-          </div>
-        )}
         {/* Show lobby only if game has not started */}
         {!showBoard && (
           <div className="flex flex-col md:flex-row gap-10 items-start justify-center w-full">
@@ -1018,6 +1080,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                   <LoteriaBoard
                     board={board}
                     marks={allMarks[user.name] || marks}
+                    winningLine={winner === user.name ? getWinningLine(marks) : null}
                     onMark={(row, col) => {
                       if (!board) return;
                       console.log('[DEBUG] onMark called!', { row, col, player: user.name, lobbyCode });
@@ -1053,163 +1116,6 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
               )}
                   {/* Game Controls: Reset, Back, Lotería, and host controls */}
                   <div className="flex flex-col gap-2 mt-6 mb-2 w-full">
-                    {/* Emergency manual card call for testing */}
-                    {isHost && gameStarted && (
-                      <div className="bg-yellow-100 dark:bg-yellow-900 p-2 rounded border">
-                        <div className="text-xs text-yellow-800 dark:text-yellow-200 mb-2">
-                          🎯 Debug: Manual Card Call ({cardNames.length} cards available)
-                        </div>
-                        <button
-                          className="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded text-xs transition-colors"
-                          onClick={() => {
-                            console.log('[DEBUG] Manual card call button clicked');
-                            console.log('[DEBUG] Total card names:', cardNames.length);
-                            console.log('[DEBUG] Called cards:', calledCards.length);
-                            const remaining = cardNames.filter(c => !calledCards.includes(c));
-                            console.log('[DEBUG] Remaining cards:', remaining.length, remaining.slice(0, 5));
-                            
-                            if (remaining.length > 0) {
-                              const next = remaining[Math.floor(Math.random() * remaining.length)];
-                              console.log('[DEBUG] Manually calling card:', next);
-                              
-                              // IMMEDIATE LOCAL UPDATE (fallback for broken backend)
-                              setCalledCards(prev => {
-                                const updated = [...prev, next];
-                                console.log('[DEBUG] ✅ IMMEDIATE local called cards update:');
-                                console.log('[DEBUG] - Previous:', prev);
-                                console.log('[DEBUG] - New card:', next);
-                                console.log('[DEBUG] - Updated list:', updated);
-                                console.log('[DEBUG] - Latest card will be:', updated[updated.length - 1]);
-                                console.log('[DEBUG] - Image name will be:', toImageName(next));
-                                
-                                // Force a re-render by triggering a state change
-                                setTimeout(() => {
-                                  console.log('[DEBUG] 🔄 Checking card display update...');
-                                  const displayElement = document.querySelector('[data-called-card-display]');
-                                  if (displayElement) {
-                                    console.log('[DEBUG] Found display element:', displayElement);
-                                  } else {
-                                    console.log('[DEBUG] ❌ Display element not found!');
-                                  }
-                                }, 100);
-                                
-                                return updated;
-                              });
-                              
-                              // Still try to emit to server (for when it's working)
-                              const socket = getSocket();
-                              console.log('[DEBUG] Socket connected:', socket.connected, 'Socket ID:', socket.id);
-                              socket.emit("call-card", { lobbyCode, card: next });
-                              console.log('[DEBUG] Emitted call-card event with:', { lobbyCode, card: next }, '(fallback mode)');
-                            } else {
-                              console.log('[DEBUG] No remaining cards to call!');
-                              alert('No remaining cards to call!');
-                            }
-                          }}
-                        >
-                          🎴 Call Random Card ({cardNames.filter(c => !calledCards.includes(c)).length} left)
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Manual mark test for debugging */}
-                    {gameStarted && (
-                      <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded border">
-                        <div className="text-xs text-blue-800 dark:text-blue-200 mb-2">
-                          🎨 Debug: Manual Mark Test (Board: {board && board.length > 0 ? '✅' : '❌'})
-                        </div>
-                        <button
-                          className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs transition-colors"
-                          onClick={() => {
-                            console.log('[DEBUG] Manual mark test button clicked');
-                            console.log('[DEBUG] Socket connected:', getSocket().connected);
-                            console.log('[DEBUG] Socket ID:', getSocket().id);
-                            console.log('[DEBUG] Board available:', board && board.length > 0);
-                            console.log('[DEBUG] Current board:', board);
-                            console.log('[DEBUG] Current marks:', marks);
-                            
-                            const socket = getSocket();
-                            const markPayload = { 
-                              lobbyCode, 
-                              player: user.name, 
-                              row: 0, 
-                              col: 0,
-                              cardAtPosition: board?.[0]?.[0] || 'unknown'
-                            };
-                            
-                            console.log('[DEBUG] Emitting mark-card with payload:', markPayload);
-                            socket.emit("mark-card", markPayload);
-                            
-                            // Set a timeout to check if server responds
-                            let responseReceived = false;
-                            const responseCheck = setTimeout(() => {
-                              if (!responseReceived) {
-                                console.error('[DEBUG] ❌ No response from server after 3 seconds!');
-                                alert('❌ Server not responding to mark events!');
-                              }
-                            }, 3000);
-                            
-                            // Listen for the response (one-time)
-                            const responseHandler = (data: any) => {
-                              if (data.player === user.name && data.row === 0 && data.col === 0) {
-                                responseReceived = true;
-                                clearTimeout(responseCheck);
-                                console.log('[DEBUG] ✅ Server responded to mark!', data);
-                                alert('✅ Server responded to mark!');
-                                socket.off('mark-card', responseHandler);
-                              }
-                            };
-                            socket.on('mark-card', responseHandler);
-                            
-                            // Also try to mark locally to see if UI responds
-                            if (board && board.length > 0) {
-                              console.log('[DEBUG] Also attempting local mark toggle');
-                              const newMarks = marks.map((row, i) => 
-                                row.map((cell, j) => (i === 0 && j === 0) ? !cell : cell)
-                              );
-                              setMarks(newMarks);
-                              console.log('[DEBUG] Local mark state updated');
-                            }
-                          }}
-                        >
-                          🎯 Test Mark (0,0) - {board?.[0]?.[0] || 'No card'}
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Socket connectivity test */}
-                    <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded border">
-                      <div className="text-xs text-gray-800 dark:text-gray-200 mb-2">
-                        🔧 Socket Test (ID: {getSocket().id?.slice(0, 8) || 'None'})
-                      </div>
-                      <button
-                        className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs transition-colors"
-                        onClick={() => {
-                          console.log('[SOCKET TEST] Button clicked');
-                          const socket = getSocket();
-                          console.log('[SOCKET TEST] Socket connected:', socket.connected);
-                          console.log('[SOCKET TEST] Socket ID:', socket.id);
-                          console.log('[SOCKET TEST] Socket transport:', (socket as any).io?.engine?.transport?.name);
-                          
-                          // Test basic emission
-                          socket.emit('ping', { test: 'manual-test', timestamp: Date.now() });
-                          console.log('[SOCKET TEST] Emitted ping event');
-                          
-                          // Add a one-time listener for pong
-                          socket.once('pong', (data: any) => {
-                            console.log('[SOCKET TEST] Received pong:', data);
-                            alert('✅ Socket test successful! Check console for details.');
-                          });
-                          
-                          // Timeout if no response
-                          setTimeout(() => {
-                            console.log('[SOCKET TEST] No pong received within 5 seconds');
-                          }, 5000);
-                        }}
-                      >
-                        🔍 Test Socket Connection
-                      </button>
-                    </div>
 
                     {/* Show when game is active and cards are being called */}
                     {/* Removed connection status, last card time, and called cards count for cleaner UI */}                <div className="flex gap-4">
@@ -1251,15 +1157,9 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                     className="px-4 py-2 bg-blue-700 text-white rounded hover:bg-blue-800 disabled:opacity-50"
                     onClick={() => {
                       if (!board) return;
-                      // Debug: print board, marks, calledCards
-                      console.log('DEBUG: board', board);
-                      console.log('DEBUG: marks', marks);
-                      console.log('DEBUG: calledCards', calledCards);
                       const line = getWinningLine(marks);
-                      console.log('DEBUG: winning line', line);
                       const bingo = checkBingo(marks);
                       const validBingo = isValidBingo(board, marks, line, calledCards);
-                      console.log('DEBUG: checkBingo', bingo, 'isValidBingo', validBingo);
                       if (!line) {
                         alert("No valid Lotería! You must complete a row, column, diagonal, corners, or center.");
                         return;
@@ -1298,6 +1198,14 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                       if (bingo) {
                         const socket = getSocket();
                         socket.emit("bingo", { lobbyCode, player: user.name });
+                        
+                        // Fallback: If server doesn't respond within 2 seconds, set winner locally
+                        setTimeout(() => {
+                          if (!winner) {
+                            console.log('[MANUAL-WIN] Server didn\'t respond, setting winner locally');
+                            setWinner(user.name);
+                          }
+                        }, 2000);
                       } else {
                         alert("No valid Lotería! You must complete a row, column, diagonal, corners, or center with called cards.");
                       }
@@ -1462,10 +1370,6 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                             variant="plain" 
                             className="w-full h-full border-4 border-yellow-400 shadow-2xl" 
                           />
-                          {/* DEBUG: Show what card name we're trying to display */}
-                          <div className="absolute top-0 left-0 bg-red-500 text-white text-xs p-1 z-50">
-                            Original: {calledCards[calledCards.length - 1]} | Count: {calledCards.length}
-                          </div>
                         </div>
                         {/* Card name overlay */}
                         <div className="absolute bottom-2 left-0 right-0 text-center">
