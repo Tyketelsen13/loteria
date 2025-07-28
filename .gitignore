@@ -1,3 +1,5 @@
+# Ignore standalone dev socket server
+socket-server.js
 node_modules
 
 # Editor settings (personal preferences)
