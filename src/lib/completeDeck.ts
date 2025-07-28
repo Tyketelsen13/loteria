@@ -2,67 +2,20 @@
 // All cards from the standard Mexican Lotería game
 
 export const COMPLETE_LOTERIA_DECK = [
-  // El cards (31 cards)
-  "El Gallo",
-  "El Diablito", 
-  "La Dama",
-  "El Catrín",
-  "El Paraguas",
-  "La Sirena",
-  "La Escalera",
-  "La Botella",
-  "El Barril",
-  "El Árbol",
-  "El Melón",
-  "El Valiente",
-  "El Gorrito",
-  "La Muerte",
-  "La Pera",
-  "La Bandera",
-  "El Bandolón",
-  "El Violoncello",
-  "La Garza",
-  "El Pájaro",
-  "La Mano",
-  "La Bota",
-  "La Luna",
-  "El Cotorro",
-  "El Borracho",
-  "El Negrito",
-  "El Corazón",
-  "La Sandía",
-  "El Tambor",
-  "El Camarón",
-  "Las Jaras",
-  
-  // La cards (20 cards)
-  "La Rosa",
-  "La Estrella",
-  "La Campana",
-  "El Cantarito",
-  "El Venado",
-  "El Sol",
-  "La Corona",
-  "La Chalupa",
-  "El Pino",
-  "El Pescado",
-  "La Palma",
-  "La Maceta",
-  "El Arpa",
-  "La Rana",
-  "La Araña",
-  "El Soldado",
-  "La Calavera",
-  "El Apache",
-  "El Nopal",
-  "El Alacrán",
-  "El Mundo",
-  "El Músico",
-  "El Cazo"
+  // Complete 54-card deck matching backend exactly
+  "El Gallo", "El Diablito", "La Dama", "El Catrín", "El Paraguas", "La Sirena", "La Escalera", "La Botella", "El Barril", "El Árbol",
+  "El Melón", "El Valiente", "El Gorrito", "La Muerte", "La Pera", "La Bandera", "El Bandolón", "El Violoncello", "La Garza", "El Pájaro",
+  "La Mano", "La Bota", "La Luna", "El Cotorro", "El Borracho", "El Negrito", "El Corazón", "La Sandía", "El Tambor", "El Camarón",
+  "Las Jaras", "La Rosa", "La Estrella", "La Campana", "El Cantarito", "El Venado", "El Sol", "La Corona", "La Chalupa", "El Pino",
+  "El Pescado", "La Palma", "La Maceta", "El Arpa", "La Rana", "La Araña", "El Soldado", "La Calavera", "El Apache", "El Nopal",
+  "El Alacrán", "El Mundo", "El Músico", "El Cazo"
 ];
 
 // Function to get all card names (54 total)
 export function getAllCardNames(): string[] {
+  if (COMPLETE_LOTERIA_DECK.length !== 54) {
+    console.warn(`[DECK] Warning: Expected 54 cards, but deck has ${COMPLETE_LOTERIA_DECK.length} cards`);
+  }
   return [...COMPLETE_LOTERIA_DECK];
 }
 

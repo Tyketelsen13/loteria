@@ -293,7 +293,7 @@ app.prepare().then(() => {
       // Find the lobby code from the socket's rooms
       const lobbyCode = Array.from(socket.rooms).find((r) => r !== socket.id);
       if (lobbyCode && payload && payload.boards) {
-        // Use complete 54-card traditional Lotería deck
+        // Use complete 54-card traditional Lotería deck (matches frontend exactly)
         const cardNames = [
           "El Gallo", "El Diablito", "La Dama", "El Catrín", "El Paraguas", "La Sirena", "La Escalera", "La Botella", "El Barril", "El Árbol",
           "El Melón", "El Valiente", "El Gorrito", "La Muerte", "La Pera", "La Bandera", "El Bandolón", "El Violoncello", "La Garza", "El Pájaro",
@@ -303,7 +303,7 @@ app.prepare().then(() => {
           "El Alacrán", "El Mundo", "El Músico", "El Cazo"
         ];
         
-        console.log('[SERVER] ✅ Using complete 54-card deck for game start');
+        console.log('[SERVER] ✅ Using complete 54-card deck for game start. Total cards:', cardNames.length);
         
         // Shuffle deck and assign boards
         const deck = [...cardNames].sort(() => Math.random() - 0.5);

@@ -718,7 +718,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
     console.log('[CLIENT] Full players list:', fullPlayers);
     // Fetch all card names and generate a random board for each player
     const cardNames = await fetchCardNames(deckTheme);
-    console.log('[CLIENT] Fetched card names:', cardNames.length, 'cards');
+    console.log('[CLIENT] Fetched card names:', cardNames.length, 'cards - Complete 54-card deck:', cardNames.length === 54 ? '✅' : '❌');
     const boards: { [name: string]: string[][] } = {};
     for (const p of fullPlayers) {
       boards[p] = generateBoardFrom(cardNames);
@@ -835,14 +835,14 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
 
   // Automatic card calling - starts when game begins and host
   useEffect(() => {
-    if (!isHost || !gameStarted || winner) return;
+    if (!isHost || !gameStarted || winner || isPaused) return;
 
     const callNextCard = () => {
       const remaining = cardNames.filter(c => !calledCards.includes(c));
       
       if (remaining.length > 0) {
         const next = remaining[Math.floor(Math.random() * remaining.length)];
-        console.log('[AUTO] Automatically calling card:', next);
+        console.log('[AUTO] Automatically calling card:', next, 'with interval:', intervalSec, 'seconds');
         
         // IMMEDIATE LOCAL UPDATE (fallback for broken backend)
         setCalledCards(prev => {
@@ -861,12 +861,12 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       }
     };
 
-    // Start calling cards automatically every 4 seconds
-    const interval = setInterval(callNextCard, 4000);
+    // Start calling cards automatically using the interval slider value
+    const interval = setInterval(callNextCard, intervalSec * 1000);
 
     // Clean up interval when component unmounts or game ends
     return () => clearInterval(interval);
-  }, [isHost, gameStarted, winner, lobbyCode, cardNames, calledCards]);
+  }, [isHost, gameStarted, winner, isPaused, lobbyCode, cardNames, calledCards, intervalSec]);
 
   // Automatic win detection - check for wins whenever marks or called cards change
   useEffect(() => {
