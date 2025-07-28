@@ -55,7 +55,7 @@ export default function LoteriaCard({ name, marked = false, onClick, showHover =
   const cardStyleClass = getCardStyleClass(cardStyle);
   
   // Use state to ensure card URL is generated on client side only
-  const [cardImageSrc, setCardImageSrc] = useState<string>('');
+  const [cardImageSrc, setCardImageSrc] = useState<string | null>(null);
   const [imageLoaded, setImageLoaded] = useState<boolean>(false);
   
   useEffect(() => {
@@ -83,21 +83,23 @@ export default function LoteriaCard({ name, marked = false, onClick, showHover =
             <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
           </div>
         )}
-        <img
-          key={`${name}-${deckTheme}`}
-          src={cardImageSrc}
-          alt={name}
-          className={`${imgClass} ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-          onLoad={() => setImageLoaded(true)}
-          onError={e => {
-            // Fallback to traditional card if custom card fails to load
-            if (!e.currentTarget.src.includes('/cards/')) {
-              e.currentTarget.src = `/cards/${wordToFilename(name)}`;
-            } else {
-              e.currentTarget.style.display = 'none';
-            }
-          }}
-        />
+        {cardImageSrc && (
+          <img
+            key={`${name}-${deckTheme}`}
+            src={cardImageSrc}
+            alt={name}
+            className={`${imgClass} ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+            onLoad={() => setImageLoaded(true)}
+            onError={e => {
+              // Fallback to traditional card if custom card fails to load
+              if (!e.currentTarget.src.includes('/cards/')) {
+                e.currentTarget.src = `/cards/${wordToFilename(name)}`;
+              } else {
+                e.currentTarget.style.display = 'none';
+              }
+            }}
+          />
+        )}
       </div>
     );
   }
@@ -125,21 +127,23 @@ export default function LoteriaCard({ name, marked = false, onClick, showHover =
       {showHover && (
         <span className="absolute inset-0 rounded-lg border-4 border-black opacity-0 group-hover:opacity-80 pointer-events-none transition-opacity z-10" />
       )}
-      <img
-        key={`${name}-${deckTheme}`}
-        src={cardImageSrc}
-        alt={name}
-        className={`absolute inset-0 w-full h-full object-cover z-0 ios-transform-gpu transition-opacity duration-200 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-        onLoad={() => setImageLoaded(true)}
-        onError={e => {
-          // Fallback to traditional card if custom card fails to load
-          if (!e.currentTarget.src.includes('/cards/')) {
-            e.currentTarget.src = `/cards/${wordToFilename(name)}`;
-          } else {
-            e.currentTarget.style.display = 'none';
-          }
-        }}
-      />
+      {cardImageSrc && (
+        <img
+          key={`${name}-${deckTheme}`}
+          src={cardImageSrc}
+          alt={name}
+          className={`absolute inset-0 w-full h-full object-cover z-0 ios-transform-gpu transition-opacity duration-200 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+          onLoad={() => setImageLoaded(true)}
+          onError={e => {
+            // Fallback to traditional card if custom card fails to load
+            if (!e.currentTarget.src.includes('/cards/')) {
+              e.currentTarget.src = `/cards/${wordToFilename(name)}`;
+            } else {
+              e.currentTarget.style.display = 'none';
+            }
+          }}
+        />
+      )}
       {marked && (
         <span
           className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"

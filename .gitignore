@@ -40,6 +40,21 @@ DEPLOYMENT_STATUS.md
 /out/
 .next
 
+# Test coverage output
+coverage/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Log files
+*.log
+
+# Distribution output
+dist/
+
+# Local-only config
+*.local
+
 # backend build output  
 /backend/.next/
 backend/.next/

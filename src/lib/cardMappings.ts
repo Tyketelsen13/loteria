@@ -1,10 +1,9 @@
 // Mapping between traditional card names and custom deck filenames
 export interface CardMapping {
   traditional: string;
-  cuteAdorable: string;
-  darkMysterious: string;
   horror: string;
-  fantasy?: string; // Optional for now until fantasy cards are uploaded
+  fantasy: string;
+  paperArt: string; 
 }
 
 // This maps traditional card names to their corresponding custom deck files
@@ -12,99 +11,94 @@ export interface CardMapping {
 export const cardMappings: CardMapping[] = [
   {
     traditional: "El Corazón",
-    cuteAdorable: "large-cute-and-adorable-mexican-loteria-deck-item-1-1752794219242.png",
-    darkMysterious: "large-evil-and-dark-themed-objects-item-1-1752790851683.png",
-    horror: "el-corazon-horror.png"
+    horror: "el-corazon-horror.png",
+    fantasy: "el-corazon-fantasy.png",
+    paperArt: "el-corazon-paper-art.png"
   },
   {
     traditional: "La Luna",
-    cuteAdorable: "small-cute-and-adorable-mexican-loteria-deck-item-2-1752794231989.png",
-    darkMysterious: "small-evil-and-dark-themed-objects-item-2-1752790879561.png",
-    horror: "la-luna-horror.png"
+    horror: "la-luna-horror.png",
+    fantasy: "la-luna-fantasy.png",
+    paperArt: "la-luna-paper-art.png"
   },
   {
     traditional: "El Sol",
-    cuteAdorable: "colorful-cute-and-adorable-mexican-loteria-deck-item-3-1752794253418.png",
-    darkMysterious: "colorful-evil-and-dark-themed-objects-item-3-1752790906683.png",
-    horror: "el-sol-horror.png"
+    horror: "el-sol-horror.png",
+    fantasy: "el-sol-fantasy.png",
+    paperArt: "el-sol-paper-art.png"
   },
   {
     traditional: "La Estrella",
-    cuteAdorable: "bright-cute-and-adorable-mexican-loteria-deck-item-4-1752794293211.png",
-    darkMysterious: "bright-evil-and-dark-themed-objects-item-4-1752790924605.png",
-    horror: "la-estrella-horror.png"
+    horror: "la-estrella-horror.png",
+    fantasy: "la-estrella-fantasy.png",
+    paperArt: "la-estrella-paper-art.png"
   },
   {
     traditional: "El Árbol",
-    cuteAdorable: "shiny-cute-and-adorable-mexican-loteria-deck-item-5-1752794306004.png",
-    darkMysterious: "shiny-evil-and-dark-themed-objects-item-5-1752790937017.png",
-    horror: "el-arbol-horror.png"
+    horror: "el-arbol-horror.png",
+    fantasy: "el-arbol-fantasy.png",
+    paperArt: "el-arbol-paper-art.png"
   },
   {
     traditional: "La Sirena",
-    cuteAdorable: "classic-cute-and-adorable-mexican-loteria-deck-item-6-1752794318610.png",
-    darkMysterious: "classic-evil-and-dark-themed-objects-item-6-1752790959424.png",
-    horror: "la-sirena-horror.png"
+    horror: "la-sirena-horror.png",
+    fantasy: "la-sirena-fantasy.png",
+    paperArt: "la-sirena-paper-art.png"
   },
   {
     traditional: "La Escalera",
-    cuteAdorable: "modern-cute-and-adorable-mexican-loteria-deck-item-7-1752794331007.png",
-    darkMysterious: "modern-evil-and-dark-themed-objects-item-7-1752790972040.png",
-    horror: "la-escalera-horror.png"
+    horror: "la-escalera-horror.png",
+    fantasy: "la-escalera-fantasy.png",
+    paperArt: "la-escalera-paper-art.png"
   },
   {
     traditional: "La Botella",
-    cuteAdorable: "vintage-cute-and-adorable-mexican-loteria-deck-item-8-1752794343773.png",
-    darkMysterious: "vintage-evil-and-dark-themed-objects-item-8-1752790983912.png",
-    horror: "la-botella-horror.png"
+    horror: "la-botella-horror.png",
+    fantasy: "la-botella-fantasy.png",
+    paperArt: "la-botella-paper-art.png"
   },
   {
     traditional: "El Barril",
-    cuteAdorable: "simple-cute-and-adorable-mexican-loteria-deck-item-9-1752794357676.png",
-    darkMysterious: "simple-evil-and-dark-themed-objects-item-9-1752791011827.png",
-    horror: "el-barril-horror.png"
+    horror: "el-barril-horror.png",
+    fantasy: "el-barril-fantasy.png",
+    paperArt: "el-barril-paper-art.png"
   },
   {
     traditional: "El Cazo",
-    cuteAdorable: "detailed-cute-and-adorable-mexican-loteria-deck-item-10-1752794370866.png",
-    darkMysterious: "detailed-evil-and-dark-themed-objects-item-10-1752791030572.png",
-    horror: "el-cazo-horror.png"
+    horror: "el-cazo-horror.png",
+    fantasy: "el-cazo-fantasy.png",
+    paperArt: "el-cazo-paper-art.png"
   },
-  {
-    traditional: "Los Remos",
-    cuteAdorable: "bold-cute-and-adorable-mexican-loteria-deck-item-11-1752794387084.png",
-    darkMysterious: "bold-evil-and-dark-themed-objects-item-11-1752791058328.png",
-    horror: "los-remos-horror.png"
-  },
+
   {
     traditional: "El Soldado",
-    cuteAdorable: "elegant-cute-and-adorable-mexican-loteria-deck-item-12-1752794399409.png",
-    darkMysterious: "elegant-evil-and-dark-themed-objects-item-12-1752791078370.png",
-    horror: "el-soldado-horror.png"
+    horror: "el-soldado-horror.png",
+    fantasy: "el-soldado-fantasy.png",
+    paperArt: "el-soldado-paper-art.png"
   },
   {
     traditional: "La Dama",
-    cuteAdorable: "cute-cute-and-adorable-mexican-loteria-deck-item-13-1752794412025.png",
-    darkMysterious: "cute-evil-and-dark-themed-objects-item-13-1752791090172.png",
-    horror: "la-dama-horror.png"
+    horror: "la-dama-horror.png",
+    fantasy: "la-dama-fantasy.png",
+    paperArt: "la-dama-paper-art.png"
   },
   {
     traditional: "El Paraguas",
-    cuteAdorable: "mysterious-cute-and-adorable-mexican-loteria-deck-item-14-1752794424824.png",
-    darkMysterious: "mysterious-evil-and-dark-themed-objects-item-14-1752791103536.png",
-    horror: "el-paraguas-horror.png"
+    horror: "el-paraguas-horror.png",
+    fantasy: "el-paraguas-fantasy.png",
+    paperArt: "el-paraguas-paper-art.png"
   },
   {
     traditional: "La Rana",
-    cuteAdorable: "magical-cute-and-adorable-mexican-loteria-deck-item-15-1752794437393.png",
-    darkMysterious: "magical-evil-and-dark-themed-objects-item-15-1752791117736.png",
-    horror: "la-rana-horror.png"
+    horror: "la-rana-horror.png",
+    fantasy: "la-rana-fantasy.png",
+    paperArt: "la-rana-paper-art.png"
   },
   {
     traditional: "El Pescado",
-    cuteAdorable: "happy-cute-and-adorable-mexican-loteria-deck-item-16-1752794449710.png",
-    darkMysterious: "happy-evil-and-dark-themed-objects-item-16-1752791137647.png",
-    horror: "el-pescado-horror.png"
+    horror: "el-pescado-horror.png",
+    fantasy: "el-pescado-fantasy.png",
+    paperArt: "el-pescado-paper-art.png"
   }
 ];
 
@@ -147,26 +141,9 @@ export function getCardImageForDeck(cardName: string, deckThemeId: string): stri
     
     let finalUrl = '';
     switch (deckThemeId) {
-      case 'cute-adorable':
-        if (mapping?.cuteAdorable) {
-          finalUrl = `${baseUrl}/68796740a83d8baf97ca977a/${mapping.cuteAdorable.replace('.png', '')}.png`;
-        } else {
-          finalUrl = `${baseUrl}/cards/${standardFilename}.png`;
-        }
-        break;
-        
-      case 'dark-mysterious':
-        if (mapping?.darkMysterious) {
-          finalUrl = `${baseUrl}/68796740a83d8baf97ca977a/${mapping.darkMysterious.replace('.png', '')}.png`;
-        } else {
-          finalUrl = `${baseUrl}/cards/${standardFilename}.png`;
-        }
-        break;
-        
       case 'horror':
         finalUrl = `${baseUrl}/horror-theme/${standardFilename}-horror.png`;
         break;
-        
       case 'fantasy':
         if (mapping?.fantasy) {
           finalUrl = `${baseUrl}/fantasy-theme/${mapping.fantasy.replace('.png', '')}.png`;
@@ -174,37 +151,27 @@ export function getCardImageForDeck(cardName: string, deckThemeId: string): stri
           finalUrl = `${baseUrl}/fantasy-theme/${standardFilename}-fantasy.png`;
         }
         break;
-        
+      case 'paper-art':
+        if (mapping?.paperArt) {
+          finalUrl = `${baseUrl}/paper-art/${mapping.paperArt.replace('.png', '')}.png`;
+        } else {
+          finalUrl = `${baseUrl}/paper-art/${standardFilename}-paper-art.png`;
+        }
+        break;
       case 'traditional':
       default:
         // Traditional cards stay local - not uploaded to Cloudinary
         finalUrl = `/cards/${standardFilename}.png`;
         break;
     }
-    
     return finalUrl;
   }
   
   // Local development - use local files
   switch (deckThemeId) {
-    case 'cute-adorable':
-      if (mapping?.cuteAdorable) {
-        return `/custom-cards/68796740a83d8baf97ca977a/${mapping.cuteAdorable}`;
-      }
-      // Fallback to traditional
-      return `/cards/${standardFilename}.png`;
-      
-    case 'dark-mysterious':
-      if (mapping?.darkMysterious) {
-        return `/custom-cards/68796740a83d8baf97ca977a/${mapping.darkMysterious}`;
-      }
-      // Fallback to traditional
-      return `/cards/${standardFilename}.png`;
-      
     case 'horror':
       // For horror theme, we have all cards so use the standard naming convention
       return `/custom-cards/horror-theme/${standardFilename}-horror.png`;
-      
     case 'fantasy':
       // For fantasy theme, check if specific mapping exists, otherwise use standard naming
       if (mapping?.fantasy) {
@@ -212,7 +179,11 @@ export function getCardImageForDeck(cardName: string, deckThemeId: string): stri
       }
       // Fallback to standard fantasy naming convention
       return `/custom-cards/fantasy-theme/${standardFilename}-fantasy.png`;
-      
+    case 'paper-art':
+      if (mapping?.paperArt) {
+        return `/custom-cards/paper-art/${mapping.paperArt}`;
+      }
+      return `/custom-cards/paper-art/${standardFilename}-paper-art.png`;
     case 'traditional':
     default:
       return `/cards/${standardFilename}.png`;

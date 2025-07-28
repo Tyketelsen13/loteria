@@ -97,7 +97,7 @@ export default function AIGamePage() {
       setError("Failed to load cards: " + e.message);
       setLoading(false);
     });
-    // eslint-disable-next-line
+     
   }, [numBots, deckTheme]);
 
   useEffect(() => {

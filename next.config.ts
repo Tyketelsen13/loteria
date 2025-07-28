@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  // Frontend-only configuration for Vercel
+  // Local development configuration
   poweredByHeader: false,
   compress: true,
   
@@ -47,25 +47,47 @@ const nextConfig: NextConfig = {
     'socket.io'
   ],
 
-  // API routes will be proxied to backend
+  // API routes will be proxied to backend (except auth routes which stay local)
   async rewrites() {
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003'
     console.log('API Backend URL:', backendUrl) // Debug log
     return [
+      // Socket.IO routes - proxy to backend
       {
-        source: '/api/:path*',
-        destination: `${backendUrl}/api/:path*`,
+        source: '/api/socket/:path*',
+        destination: `${backendUrl}/api/socket/:path*`,
       },
+      // Lobby routes - proxy to backend
+      {
+        source: '/api/lobbies/:path*',
+        destination: `${backendUrl}/api/lobbies/:path*`,
+      },
+      // Cards routes - proxy to backend
+      {
+        source: '/api/cards/:path*',
+        destination: `${backendUrl}/api/cards/:path*`,
+      },
+      // User routes - proxy to backend
+      {
+        source: '/api/users/:path*',
+        destination: `${backendUrl}/api/users/:path*`,
+      },
+      // Profile routes - proxy to backend
+      {
+        source: '/api/profile/:path*',
+        destination: `${backendUrl}/api/profile/:path*`,
+      },
+      // Note: /api/auth routes are NOT proxied - they stay on frontend for NextAuth.js
     ]
   },
 
-  // Headers for CORS
+  // Headers for CORS - but only for proxied routes
   async headers() {
     return [
       {
-        source: '/api/:path*',
+        source: '/api/(socket|lobbies|cards|users|profile)/:path*',
         headers: [
-          { key: 'Access-Control-Allow-Origin', value: 'https://loteria-frontend-ten.vercel.app' },
+          { key: 'Access-Control-Allow-Origin', value: 'http://localhost:3002' },
           { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
           { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization, Cookie, next-auth.csrf-token, next-auth.callback-url, next-auth.session-token' },
           { key: 'Access-Control-Allow-Credentials', value: 'true' },

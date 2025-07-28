@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     // Fallback with all 54 traditional card names
     const fallbackCards = [
       'El Corazón', 'La Luna', 'El Sol', 'La Estrella', 'El Árbol', 'La Sirena', 
-      'La Escalera', 'La Botella', 'El Barril', 'El Cazo', 'Los Remos', 'El Soldado',
+      'La Escalera', 'La Botella', 'El Barril', 'El Cazo', 'El Soldado',
       'La Dama', 'El Paraguas', 'La Rana', 'El Pescado', 'El Alacran', 'El Apache',
       'El Arpa', 'El Bandolón', 'El Borracho', 'El Camarón', 'El Cantarito', 'El Catrín',
       'El Cotorro', 'El Diablito', 'El Gallo', 'El Gorrito', 'El Melón', 'El Mundo',

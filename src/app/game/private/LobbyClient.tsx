@@ -6,8 +6,9 @@
 function toImageName(name: string): string {
   return name
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
+    .normalize("NFD").replace(/\p{Diacritic}/gu, "")  // Remove accents/diacritics
+    .replace(/\s+/g, "-")                              // Replace spaces with hyphens
+    .replace(/[^a-z0-9\-]/g, "");                      // Remove special characters
 }
 
 // --- Bingo logic copied from AI game ---
@@ -120,6 +121,8 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
   const [cardNames, setCardNames] = useState<string[]>([]);
   // Marks for the user's board (4x4 boolean grid)
   const [marks, setMarks] = useState(Array(4).fill(null).map(() => Array(4).fill(false)));
+  // All marks for all players (by name)
+  const [allMarks, setAllMarks] = useState<{ [name: string]: boolean[][] }>({});
   // Whether the game has started
   const [gameStarted, setGameStarted] = useState(false);
   // Connection status monitoring
@@ -138,7 +141,10 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
   // Reset marks when a new board is set (but not on every render)
   const prevBoardRef = useRef<string[][] | null>(null);
   useEffect(() => {
-    if (board && board !== prevBoardRef.current) {
+    if (!board) return;
+    const prev = prevBoardRef.current;
+    const boardsAreEqual = prev && board && prev.length === board.length && prev.every((row, i) => row.length === board[i].length && row.every((cell, j) => cell === board[i][j]));
+    if (!boardsAreEqual) {
       setMarks(Array(4).fill(null).map(() => Array(4).fill(false)));
       prevBoardRef.current = board;
     }
@@ -149,60 +155,88 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
   // Host: Start calling cards when gameStarted is true, and not paused
   // IMPORTANT: Only ONE client should run this (the actual host)
   useEffect(() => {
-    if (!isHost || !gameStarted || isPaused || winner) return;
+    // --- Card calling logic with pause support ---
+    // If not host, not started, or winner, do nothing
+    if (!isHost || !gameStarted || winner) return;
     if (!cardNames.length) return;
-    
+
     // Additional safety check: ensure only the real host calls cards
     if (lobbyHost && lobbyHost !== user.name) {
       console.log('[CLIENT] Not the real host, skipping card calling');
       return;
     }
-    
+
     let timeoutId: NodeJS.Timeout | null = null;
     let fallbackTimeoutId: NodeJS.Timeout | null = null;
     let heartbeatId: NodeJS.Timeout | null = null;
     let cancelled = false;
-    let isFirstCall = calledCards.length === 0;
+    const isFirstCall = calledCards.length === 0;
     let waitingForConfirmation = false;
     let lastCallTime = Date.now();
     let consecutiveFailures = 0;
-    
+
+    // Helper to clear all timeouts/intervals
+    function clearAllTimers() {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+      if (fallbackTimeoutId) {
+        clearTimeout(fallbackTimeoutId);
+        fallbackTimeoutId = null;
+      }
+      if (heartbeatId) {
+        clearInterval(heartbeatId);
+        heartbeatId = null;
+      }
+    }
+
+    // If paused, clear all timers and do not proceed
+    if (isPaused) {
+      clearAllTimers();
+      return;
+    }
+
     console.log('[CLIENT] Host starting card calling logic');
-    
+
     function callNextCard() {
       if (cancelled || waitingForConfirmation) return;
-      
+      if (isPaused) {
+        clearAllTimers();
+        return;
+      }
+
       const remaining = cardNames.filter(c => !calledCards.includes(c));
       if (remaining.length === 0) {
         console.log('[CLIENT] No more cards to call');
         return;
       }
-      
+
       const next = remaining[Math.floor(Math.random() * remaining.length)];
       const socket = getSocket();
-      
+
       // Check if socket is connected before emitting
       if (!socket.connected) {
         console.log('[CLIENT] Socket disconnected, attempting reconnection...');
         socket.connect();
         // Retry after a short delay
         timeoutId = setTimeout(() => {
-          if (!cancelled) callNextCard();
+          if (!cancelled && !isPaused) callNextCard();
         }, 2000);
         return;
       }
-      
+
       console.log('[CLIENT] Host calling card:', next);
       waitingForConfirmation = true;
       lastCallTime = Date.now();
       socket.emit("call-card", { lobbyCode, card: next });
-      
+
       // Shorter fallback timeout with retry logic
       fallbackTimeoutId = setTimeout(() => {
-        if (cancelled) return;
+        if (cancelled || isPaused) return;
         consecutiveFailures++;
         console.log(`[CLIENT] No server confirmation received (failure ${consecutiveFailures}/3), retrying...`);
-        
+
         if (consecutiveFailures >= 3) {
           console.log('[CLIENT] Too many failures, forcing continuation');
           waitingForConfirmation = false;
@@ -215,21 +249,25 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
         }
       }, 3000); // Reduced to 3 seconds
     }
-    
+
     function scheduleNext() {
       if (cancelled) return;
+      if (isPaused) {
+        clearAllTimers();
+        return;
+      }
       // Add some jitter to prevent synchronized calls
       const jitter = Math.random() * 500; // 0-500ms jitter
       timeoutId = setTimeout(() => {
-        callNextCard();
+        if (!isPaused) callNextCard();
       }, (intervalSec * 1000) + jitter);
     }
-    
+
     // Heartbeat to detect if card calling has stalled
     function startHeartbeat() {
       heartbeatId = setInterval(() => {
-        if (cancelled || !waitingForConfirmation) return;
-        
+        if (cancelled || !waitingForConfirmation || isPaused) return;
+
         const timeSinceLastCall = Date.now() - lastCallTime;
         if (timeSinceLastCall > 10000) { // 10 seconds
           console.log('[CLIENT] Card calling seems stuck, forcing recovery...');
@@ -243,13 +281,13 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
         }
       }, 5000); // Check every 5 seconds
     }
-    
+
     // Listen for confirmation from server before scheduling next
     const socket = getSocket();
     function onCalledCard(card: string) {
       console.log('[CLIENT] Received called-card confirmation:', card);
       if (cancelled) return;
-      
+
       waitingForConfirmation = false;
       consecutiveFailures = 0; // Reset failure counter on success
       if (fallbackTimeoutId) {
@@ -258,7 +296,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       }
       scheduleNext();
     }
-    
+
     // Listen for socket disconnection
     function onDisconnect() {
       console.log('[CLIENT] Socket disconnected during card calling');
@@ -273,36 +311,34 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
         }, 2000);
       }
     }
-    
+
     // Listen for socket reconnection
     function onReconnect() {
       console.log('[CLIENT] Socket reconnected, resuming card calling');
-      if (!cancelled && !waitingForConfirmation) {
+      if (!cancelled && !waitingForConfirmation && !isPaused) {
         consecutiveFailures = 0;
         scheduleNext();
       }
     }
-    
+
     socket.on("called-card", onCalledCard);
     socket.on("disconnect", onDisconnect);
     socket.on("connect", onReconnect);
-    
+
     // Start heartbeat monitoring
     startHeartbeat();
-    
+
     // Start the first call immediately if no cards have been called
-    if (isFirstCall) {
+    if (isFirstCall && !isPaused) {
       callNextCard();
-    } else {
+    } else if (!isPaused) {
       scheduleNext();
     }
-    
+
     return () => {
       cancelled = true;
       waitingForConfirmation = false;
-      if (timeoutId) clearTimeout(timeoutId);
-      if (fallbackTimeoutId) clearTimeout(fallbackTimeoutId);
-      if (heartbeatId) clearInterval(heartbeatId);
+      clearAllTimers();
       socket.off("called-card", onCalledCard);
       socket.off("disconnect", onDisconnect);
       socket.off("connect", onReconnect);
@@ -314,13 +350,40 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
   // Listen for called card events from server and update deck from server
   useEffect(() => {
     const socket = getSocket();
-    socket.on("called-cards", (cards: string[]) => {
-      console.log('[CLIENT] Received called-cards update:', cards.length, 'cards');
-      setCalledCards(cards);
-      setLastCardTime(Date.now()); // Track when last card was received
+    // Listen for individual card-called events from server (server-driven card calling)
+    socket.on("card-called", (payload: { cardId: string, cardIndex: number, totalCards: number }) => {
+      console.log('[CLIENT] 📢 Server called card:', payload);
+      setCalledCards(prev => {
+        if (!prev.includes(payload.cardId)) {
+          const newCalled = [...prev, payload.cardId];
+          console.log('[CLIENT] 🃏 Updated called cards:', newCalled);
+          return newCalled;
+        }
+        return prev;
+      });
+      announceCard(payload.cardId);
+      setLastCardTime(Date.now());
     });
+    // Listen for bulk called-cards updates (for sync)
+    socket.on("called-cards", (cards: string[]) => {
+      console.log('[CLIENT] 📋 Received bulk called-cards update:', cards.length, 'cards');
+      setCalledCards(cards);
+      setLastCardTime(Date.now());
+    });
+    // Listen for mark-card events for all players
     socket.on("mark-card", (payload: { player: string; row: number; col: number }) => {
       const { player, row, col } = payload;
+      console.log('[DEBUG] Received mark-card event:', payload, 'local user:', user.name);
+      setAllMarks(prev => {
+        const updated = { ...prev };
+        if (!updated[player]) {
+          updated[player] = Array(4).fill(null).map(() => Array(4).fill(false));
+        }
+        updated[player] = updated[player].map(arr => [...arr]);
+        updated[player][row][col] = !updated[player][row][col];
+        return updated;
+      });
+      // If this is the local user, also update the local marks state for board UI
       if (player === user.name) {
         setMarks(prev => {
           const updated = prev.map(arr => [...arr]);
@@ -330,6 +393,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       }
     });
     return () => {
+      socket.off("card-called");
       socket.off("called-cards");
       socket.off("mark-card");
     };
@@ -422,7 +486,12 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
     const socket = getSocket();
     
     // Join the lobby room on the server (socket auto-connects)
-    socket.emit("join-lobby", lobbyCode, user.name);
+    socket.emit("join-lobby", { 
+      lobbyCode, 
+      playerName: user.name, 
+      playerEmail: `${user.name}@loteria.game` 
+    });
+    console.log('[CLIENT] 🏠 Joining lobby with proper format:', { lobbyCode, playerName: user.name });
     
     // Check if this user should be host and set it on the server
     const checkAndSetHost = async () => {
@@ -443,39 +512,116 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
         showNotification("Player Joined", { body: `${name} joined the lobby!` });
       }
     });
+
+    // Listen for players leaving via socket
+    socket.on("player-left", (data: { playerName: string, playerCount: number }) => {
+      console.log('[CLIENT] Player left:', data);
+      setPlayers((prev) => prev.filter(p => p !== data.playerName));
+      if (data.playerName !== user.name && notifications) {
+        showNotification("Player Left", { body: `${data.playerName} left the lobby` });
+      }
+    });
+
     // Listen for new chat messages via socket
     socket.on("chat-message", (msg: { name: string; message: string }) => {
       setChat((prev) => [...prev, msg]);
     });
     
-    // Listen for start-game event
-    socket.on("start-game", (payload: { boards: { [name: string]: string[][] }, deck?: string[] }) => {
-      console.log('[CLIENT] Received start-game payload:', payload);
-      setAllBoards(payload.boards);
-      setBoard(payload.boards[user.name]);
+    // Listen for game-started event from server
+    socket.on("game-started", (payload: { players: any[], settings: any, lobbyCode: string, gameStarted: boolean }) => {
+      console.log('[CLIENT] 🎮 Received game-started event!');
+      console.log('[CLIENT] 📋 Payload:', payload);
+      console.log('[CLIENT] 🔍 Current showBoard state:', showBoard);
+      console.log('[CLIENT] 🔍 Current gameStarted state:', gameStarted);
+      
+      // Extract boards from players data
+      const boards: { [name: string]: string[][] } = {};
+      payload.players.forEach(player => {
+        if (player.board && player.board.length > 0) {
+          boards[player.name] = player.board;
+        }
+      });
+      
+      console.log('[CLIENT] 📊 Extracted boards:', Object.keys(boards));
+      console.log('[CLIENT] 👤 User name:', user.name);
+      console.log('[CLIENT] 🎯 User board found:', !!boards[user.name]);
+      
+      setAllBoards(boards);
+      setBoard(boards[user.name]);
       setMarks(Array(4).fill(null).map(() => Array(4).fill(false)));
-      // Use the deck from the server as the source of truth for cardNames
-      if (payload.deck && Array.isArray(payload.deck) && payload.deck.length > 0) {
-        setCardNames(payload.deck);
-        // Preload all card images to prevent white flashes
-        cardPreloader.preloadCards(payload.deck, deckTheme).then(() => {
-          console.log('[CLIENT] Card preloading complete');
-        }).catch((error) => {
-          console.warn('[CLIENT] Card preloading failed:', error);
-        });
-      } else {
-        // Fallback: try to infer deck from boards if missing (should not happen)
-        const allCards = Object.values(payload.boards).flat(2);
-        const unique = Array.from(new Set(allCards));
-        setCardNames(unique);
-        console.warn('[CLIENT] No deck in payload, using fallback unique cards:', unique);
-        // Preload fallback cards
-        cardPreloader.preloadCards(unique, deckTheme).catch((error) => {
-          console.warn('[CLIENT] Fallback card preloading failed:', error);
-        });
-      }
+      setGameStarted(true);
+      
+      console.log('[CLIENT] ✅ Set gameStarted to true');
+      
+      // Use the card names from the server (they're in the boards)
+      const allCards = Object.values(boards).flat(2);
+      const unique = Array.from(new Set(allCards));
+      setCardNames(unique);
+      
+      // Preload all card images to prevent white flashes
+      cardPreloader.preloadCards(unique, deckTheme).then(() => {
+        console.log('[CLIENT] Card preloading complete');
+      }).catch((error) => {
+        console.warn('[CLIENT] Card preloading failed:', error);
+      });
+      
       setShowBoard(true);
-      setGameStarted(true); // Start the game for all players
+      console.log('[CLIENT] ✅ Set showBoard to true - should now navigate to game board!');
+      console.log('[CLIENT] 🚀 Game started successfully! Players:', Object.keys(boards));
+    });
+
+    // Listen for error events from server
+    socket.on("error", (errorData: { message: string }) => {
+      console.error('[CLIENT] ❌ Server error:', errorData);
+      alert(`Server Error: ${errorData.message}`);
+    });
+
+    // Listen for game-start-confirmed event
+    socket.on("game-start-confirmed", (confirmData: any) => {
+      console.log('[CLIENT] ✅ Game start confirmed by server:', confirmData);
+    });
+
+    // Listen for lobby-created event (when creating new lobby)
+    socket.on("lobby-created", (lobbyData: { lobbyCode: string, lobby: any }) => {
+      console.log('[CLIENT] 🎪 New lobby created:', lobbyData);
+      
+      // Redirect to the new lobby
+      const newLobbyCode = lobbyData.lobbyCode;
+      console.log('[CLIENT] 🔄 Redirecting to new lobby:', newLobbyCode);
+      
+      // Update URL and state to use new lobby
+      window.history.pushState({}, '', `/game/private?code=${newLobbyCode}`);
+      window.location.reload(); // Reload to use new lobby code
+    });
+
+    // Listen for lobby-state event (when joining existing lobby)
+    socket.on("lobby-state", (lobbyState: any) => {
+      console.log('[CLIENT] 🏠 Received lobby state from socket server:', lobbyState);
+      
+      if (lobbyState && lobbyState.players) {
+        // Sync player list from socket server (most accurate)
+        const connectedPlayers = lobbyState.players
+          .filter((p: any) => p.connected && !p.isAI)
+          .map((p: any) => p.name);
+        
+        console.log('[CLIENT] 📋 Syncing player list from socket server:', connectedPlayers);
+        setPlayers(connectedPlayers);
+        
+        // Find the host from the socket server data
+        const hostPlayer = lobbyState.players.find((p: any) => p.isHost);
+        if (hostPlayer) {
+          const socketIsHost = hostPlayer.socketId === socket.id;
+          console.log('[CLIENT] 🔍 Socket host check:', {
+            hostPlayerSocketId: hostPlayer.socketId,
+            mySocketId: socket.id,
+            hostPlayerName: hostPlayer.name,
+            myName: user.name,
+            socketIsHost
+          });
+          setIsHost(socketIsHost);
+          setLobbyHost(hostPlayer.name);
+        }
+      }
     });
     
     // Poll for player list from DB every 2 seconds for real-time updates
@@ -522,13 +668,13 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       "Sofía", "Mateo", "Valeria", "Diego", "Camila", "Santiago", "Lucía", "Emilia", "Andrés", "Isabella",
       "Mariana", "Javier", "Paola", "Carlos", "Gabriela", "Luis", "Daniela", "Miguel", "Alejandra", "Juan"
     ];
-    let fullPlayers = [...players, ...bots];
+    const fullPlayers = [...players, ...bots];
     let aiUsed = 0;
     while (fullPlayers.length < minPlayers) {
       // Add unique bot names
-      let nextBot = aiNames[aiUsed++ % aiNames.length];
+      const nextBot = aiNames[aiUsed++ % aiNames.length];
       // Prefix with AI for server logic, but display as a real name
-      let aiDisplay = `AI ${nextBot}`;
+      const aiDisplay = `AI ${nextBot}`;
       if (!fullPlayers.includes(aiDisplay)) {
         fullPlayers.push(aiDisplay);
       }
@@ -562,10 +708,57 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
     }
     
     if (socket.connected) {
-      socket.emit("start-game", { boards });
-      console.log('[CLIENT] Start game event emitted successfully');
+      console.log('[CLIENT] 🚀 About to emit start-game event');
+      console.log('[CLIENT] 📤 Lobby code:', lobbyCode);
+      console.log('[CLIENT] 🔌 Socket connected:', socket.connected);
+      console.log('[CLIENT] 🆔 Socket ID:', socket.id);
+      
+      socket.emit("start-game", { lobbyCode });
+      console.log('[CLIENT] ✅ Start game event emitted successfully with lobbyCode:', lobbyCode);
     } else {
       console.error('[CLIENT] Failed to connect socket, cannot start game');
+      return;
+    }
+  }
+
+  // Create a new lobby where user will be the host
+  async function handleCreateNewLobby() {
+    console.log('[CLIENT] 🎪 Creating new lobby...');
+    
+    const socket = getSocket();
+    if (!socket) {
+      console.error('[CLIENT] Socket not available');
+      return;
+    }
+
+    // Ensure socket is connected
+    if (!socket.connected) {
+      console.log('[CLIENT] Socket not connected, connecting...');
+      socket.connect();
+      // Wait a moment for connection to establish
+      await new Promise(resolve => {
+        if (socket.connected) {
+          resolve(true);
+        } else {
+          socket.once('connect', () => resolve(true));
+          setTimeout(() => resolve(false), 5000); // 5 second timeout
+        }
+      });
+    }
+    
+    if (socket.connected) {
+      console.log('[CLIENT] 🚀 Creating new lobby as host');
+      console.log('[CLIENT] 👤 User name:', user.name);
+      console.log('[CLIENT]  Socket connected:', socket.connected);
+      console.log('[CLIENT] 🆔 Socket ID:', socket.id);
+      
+      socket.emit("create-lobby", { 
+        playerName: user.name, 
+        playerEmail: `${user.name}@loteria.game` // Create a default email
+      });
+      console.log('[CLIENT] ✅ Create lobby event emitted successfully');
+    } else {
+      console.error('[CLIENT] Failed to connect socket, cannot create lobby');
       return;
     }
   }
@@ -628,6 +821,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                   <span className="text-5xl font-western text-[#b89c3a] drop-shadow-lg">🎲</span>
                 </div>
                 <div className="text-3xl font-western font-extrabold text-center text-[#8c2f2b] dark:text-yellow-200 mb-4 tracking-widest drop-shadow transition-colors">Lobby: <span className="bg-yellow-100 dark:bg-yellow-900 px-2 py-1 rounded-lg border border-yellow-300 dark:border-yellow-700 text-[#b94a48] dark:text-yellow-200 text-2xl ml-2">{lobbyCode}</span></div>
+                
                 {/* Start Game Button (host only) */}
                 {isHost && (
                   <div className="flex flex-col items-center mb-4">
@@ -649,7 +843,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                                 "Sofía", "Mateo", "Valeria", "Diego", "Camila", "Santiago", "Lucía", "Emilia", "Andrés", "Isabella",
                                 "Mariana", "Javier", "Paola", "Carlos", "Gabriela", "Luis", "Daniela", "Miguel", "Alejandra", "Juan"
                               ];
-                              let nextBot = aiNames.find(name => !players.includes(`AI ${name}`) && !bots.includes(`AI ${name}`));
+                              const nextBot = aiNames.find(name => !players.includes(`AI ${name}`) && !bots.includes(`AI ${name}`));
                               if (nextBot) setBots(prev => [...prev, `AI ${nextBot}`]);
                             }}
                             disabled={players.length + bots.length >= 4}
@@ -669,6 +863,25 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                     )}
                   </div>
                 )}
+                
+                {/* Create New Lobby Button (for non-hosts) */}
+                {!isHost && (
+                  <div className="flex flex-col items-center mb-4">
+                    <div className="text-sm text-[#8c2f2b] dark:text-yellow-200 mb-2 text-center opacity-75">
+                      Only the host can start the game in this lobby
+                    </div>
+                    <button
+                      onClick={handleCreateNewLobby}
+                      className="mb-2 bg-gradient-to-b from-[#68d391] to-[#38a169] text-white font-western font-semibold py-3 px-8 rounded-2xl border-2 border-[#2d7d32] shadow-xl hover:from-[#81e6d9] hover:to-[#4fd1c7] hover:border-[#1a5f4a] transition-all duration-150 text-xl tracking-wider min-h-touch min-w-touch touch-manipulation ios-tap-transparent"
+                    >
+                      🎪 Create New Lobby (Be Host)
+                    </button>
+                    <div className="text-xs text-gray-600 dark:text-gray-400 text-center max-w-sm">
+                      This will create a new lobby where you'll be the host and can start games
+                    </div>
+                  </div>
+                )}
+                
                 {/* Player list */}
                 <div className="mb-6 w-full">
                   <div className="font-semibold mb-2 text-[#8c2f2b] text-lg flex items-center gap-2"><span className="text-xl">👥</span>Players:</div>
@@ -715,6 +928,24 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
             {/* Left: Board Area */}
             <div className="flex flex-col items-center w-full max-w-md">
               <div className="font-semibold mb-2 text-[#8c2f2b] dark:text-yellow-200 transition-colors">Your Board</div>
+              
+              {/* Latest Card Only */}
+              <div className="w-full mb-4 p-3 bg-gradient-to-r from-[#fff8e1] to-[#f7e0b2] dark:from-[#2a2a2a] dark:to-[#1e1e1e] border-2 border-[#b89c3a] dark:border-yellow-700 rounded-xl shadow-lg transition-colors">
+                <div className="text-center">
+                  {calledCards.length > 0 && (
+                    <div className="bg-[#e1b866] dark:bg-yellow-800 text-[#8c2f2b] dark:text-yellow-200 px-3 py-2 rounded-lg border border-[#b89c3a] dark:border-yellow-600 shadow-sm">
+                      <div className="text-xs font-medium opacity-75">Latest Card:</div>
+                      <div className="font-bold text-lg">{calledCards[calledCards.length - 1]}</div>
+                    </div>
+                  )}
+                  {calledCards.length === 0 && (
+                    <div className="text-gray-500 dark:text-gray-400 italic text-sm">
+                      Waiting for first card...
+                    </div>
+                  )}
+                </div>
+              </div>
+              
               {board && (
                 <div
                   className="p-4 rounded-2xl shadow-2xl w-full border-2 border-[#b89c3a]"
@@ -728,9 +959,10 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                   {/* Lotería board grid, interactive for marking cards */}
                   <LoteriaBoard
                     board={board}
-                    marks={marks}
+                    marks={allMarks[user.name] || marks}
                     onMark={(row, col) => {
                       if (!board) return;
+                      console.log('[DEBUG] onMark called!', { row, col, player: user.name });
                       // Only emit to server, don't update local state immediately
                       // Wait for server confirmation via "mark-card" event
                       const socket = getSocket();
@@ -742,39 +974,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
               {/* Game Controls: Reset, Back, Lotería, and host controls */}
               <div className="flex flex-col gap-2 mt-6 mb-2 w-full">
                 {/* Show when game is active and cards are being called */}
-                {gameStarted && (
-                  <div className="text-center mb-4 space-y-2">
-                    <div className="p-3 bg-green-100 border border-green-400 rounded-lg">
-                      <p className="text-green-800 font-semibold">🎮 Game is active! Cards are being called...</p>
-                    </div>
-                    
-                    {/* Connection and card calling status */}
-                    <div className="flex justify-center space-x-4 text-sm">
-                      <div className={`flex items-center gap-1 px-2 py-1 rounded ${
-                        socketConnected 
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-red-100 text-red-700'
-                      }`}>
-                        <span className={`w-2 h-2 rounded-full ${
-                          socketConnected ? 'bg-green-500' : 'bg-red-500'
-                        }`}></span>
-                        {socketConnected ? 'Connected' : 'Disconnected'}
-                      </div>
-                      
-                      {lastCardTime && (
-                        <div className="flex items-center gap-1 px-2 py-1 rounded bg-blue-100 text-blue-700">
-                          <span className="text-xs">⏱️</span>
-                          Last card: {Math.floor((Date.now() - lastCardTime) / 1000)}s ago
-                        </div>
-                      )}
-                      
-                      <div className="flex items-center gap-1 px-2 py-1 rounded bg-gray-100 text-gray-700">
-                        <span className="text-xs">🎯</span>
-                        {calledCards.length}/{cardNames.length} called
-                      </div>
-                    </div>
-                  </div>
-                )}
+                {/* Removed connection status, last card time, and called cards count for cleaner UI */}
 
                 <div className="flex gap-4">
                   {/* Reset board and game state */}
@@ -872,127 +1072,39 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                 </div>
                 {/* Host controls: interval slider and pause/resume - only show when cards are being called */}
                 {isHost && gameStarted && (
-                  <div className="flex flex-col gap-2 mt-2">
-                    <label className="flex items-center gap-3 text-sm font-medium">
-                      Card Interval:
-                      <input
-                        type="range"
-                        min={1}
-                        max={10}
-                        value={intervalSec}
-                        onChange={e => setIntervalSec(Number(e.target.value))}
-                        disabled={isPaused}
-                        style={{ width: 140 }}
-                        className="appearance-none w-[140px] h-3 bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-600 rounded-lg outline-none transition-all duration-200 shadow-inner
-                          disabled:opacity-60
-                          [&::-webkit-slider-thumb]:appearance-none
-                          [&::-webkit-slider-thumb]:w-6
-                          [&::-webkit-slider-thumb]:h-6
-                          [&::-webkit-slider-thumb]:bg-yellow-500
-                          [&::-webkit-slider-thumb]:rounded-full
-                          [&::-webkit-slider-thumb]:shadow-lg
-                          [&::-webkit-slider-thumb]:border-2
-                          [&::-webkit-slider-thumb]:border-yellow-700
-                          [&::-webkit-slider-thumb]:transition-all
-                          [&::-webkit-slider-thumb]:duration-200
-                          dark:bg-gradient-to-r dark:from-yellow-700 dark:via-yellow-600 dark:to-yellow-400
-                          "
-                      />
-                      <span className="w-10 text-center font-bold text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-yellow-900 rounded px-2 py-1 shadow-sm border border-yellow-300 dark:border-yellow-700">{intervalSec}s</span>
-                    </label>
-                    <button
-                      className={`flex items-center gap-2 px-5 py-2 rounded-full font-semibold border-2 shadow transition-all duration-200
-                        ${isPaused
-                          ? 'bg-blue-500 hover:bg-blue-600 border-blue-300 text-white'
-                          : 'bg-red-600 hover:bg-red-700 border-yellow-400 text-white'}
-                        hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-300`}
-                      onClick={() => setIsPaused(p => !p)}
-                    >
-                      <span className="text-lg">
-                        {isPaused ? '▶️' : '⏸️'}
-                      </span>
-                      <span className="tracking-wide">
-                        {isPaused ? 'Resume' : 'Pause'}
-                      </span>
-                    </button>
-                    <button
-                      className="flex items-center gap-2 px-4 py-2 rounded-full font-semibold border-2 shadow transition-all duration-200
-                        bg-purple-600 hover:bg-purple-700 border-purple-400 text-white
-                        hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-300"
-                      onClick={() => {
-                        const remaining = cardNames.filter(c => !calledCards.includes(c));
-                        if (remaining.length > 0) {
-                          const next = remaining[Math.floor(Math.random() * remaining.length)];
-                          console.log('[CLIENT] Manual call card clicked:', next);
-                          const socket = getSocket();
-                          socket.emit("call-card", { lobbyCode, card: next });
-                        }
-                      }}
-                      title="Manually call the next card if automatic calling gets stuck"
-                    >
-                      <span className="text-lg">
-                        📢
-                      </span>
-                      <span className="tracking-wide text-sm">
-                        Call Card
-                      </span>
-                    </button>
-                    <button
-                      className="flex items-center gap-2 px-4 py-2 rounded-full font-semibold border-2 shadow transition-all duration-200
-                        bg-red-500 hover:bg-red-600 border-red-400 text-white
-                        hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-300"
-                      onClick={() => {
-                        console.log('[CLIENT] Fix calling clicked - forcing recovery');
-                        const socket = getSocket();
-                        
-                        // Force reconnect if needed
-                        if (!socket.connected) {
-                          console.log('[CLIENT] Reconnecting socket...');
-                          socket.connect();
-                        }
-                        
-                        // Send a heartbeat to the server
-                        socket.emit("heartbeat", { lobbyCode, player: user.name });
-                        
-                        // Manually trigger the next card after a short delay
-                        setTimeout(() => {
-                          const remaining = cardNames.filter(c => !calledCards.includes(c));
-                          if (remaining.length > 0) {
-                            const next = remaining[Math.floor(Math.random() * remaining.length)];
-                            console.log('[CLIENT] Recovery call card:', next);
-                            socket.emit("call-card", { lobbyCode, card: next });
-                          }
-                        }, 1000);
-                      }}
-                      title="Fix card calling if it gets stuck - forces reconnection and resumes calling"
-                    >
-                      <span className="text-lg">
-                        🔧
-                      </span>
-                      <span className="tracking-wide text-sm">
-                        Fix Calling
-                      </span>
-                    </button>
-                    <button
-                      className="flex items-center gap-2 px-5 py-2 rounded-full font-semibold border-2 shadow transition-all duration-200
-                        bg-orange-600 hover:bg-orange-700 border-orange-400 text-white
-                        hover:scale-105 focus:outline-none focus:ring-2 focus:ring-orange-300"
-                      onClick={() => {
-                        if (confirm('Are you sure you want to reset the game for everyone? This will start a new round.')) {
-                          console.log('[CLIENT] Host Reset Game clicked, emitting reset-game event');
-                          const socket = getSocket();
-                          socket.emit("reset-game", { lobbyCode });
-                        }
-                      }}
-                    >
-                      <span className="text-lg">
-                        🔄
-                      </span>
-                      <span className="tracking-wide">
-                        Reset Game
-                      </span>
-                    </button>
-                  </div>
+                  <>
+                    {/* Card Interval Slider (keep above) */}
+                    <div className="flex flex-col gap-2 mt-2">
+                      <label className="flex items-center gap-3 text-sm font-medium">
+                        Card Interval:
+                        <input
+                          type="range"
+                          min={1}
+                          max={10}
+                          value={intervalSec}
+                          onChange={e => setIntervalSec(Number(e.target.value))}
+                          disabled={isPaused}
+                          style={{ width: 140 }}
+                          className="appearance-none w-[140px] h-3 bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-600 rounded-lg outline-none transition-all duration-200 shadow-inner
+                            disabled:opacity-60
+                            [&::-webkit-slider-thumb]:appearance-none
+                            [&::-webkit-slider-thumb]:w-6
+                            [&::-webkit-slider-thumb]:h-6
+                            [&::-webkit-slider-thumb]:bg-yellow-500
+                            [&::-webkit-slider-thumb]:rounded-full
+                            [&::-webkit-slider-thumb]:shadow-lg
+                            [&::-webkit-slider-thumb]:border-2
+                            [&::-webkit-slider-thumb]:border-yellow-700
+                            [&::-webkit-slider-thumb]:transition-all
+                            [&::-webkit-slider-thumb]:duration-200
+                            dark:bg-gradient-to-r dark:from-yellow-700 dark:via-yellow-600 dark:to-yellow-400
+                            "
+                        />
+                        <span className="w-10 text-center font-bold text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-yellow-900 rounded px-2 py-1 shadow-sm border border-yellow-300 dark:border-yellow-700">{intervalSec}s</span>
+                      </label>
+                    </div>
+                    {/* Move Pause and Reset Game below called cards */}
+                  </>
                 )}
               </div>
               {/* Winner Modal Overlay */}
@@ -1120,14 +1232,78 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                     </div>
                   )}
                 </div>
-                {/* Deck/called card count */}
-                <div className="mt-4 text-sm text-gray-600 font-medium">
-                  {cardNames.length > 0 && (
-                    <span>
-                      {calledCards.length} called / {cardNames.length} total
-                    </span>
-                  )}
-                </div>
+                
+                {/* Called Cards History */}
+                {calledCards.length > 0 && (
+                  <div className="mt-4 w-full">
+                    <h3 className="font-semibold mb-3 text-[#8c2f2b] dark:text-yellow-200 text-center text-sm">Recently Called Cards</h3>
+                    <div className="bg-gradient-to-br from-[#fff8e1]/90 via-[#f7e0b2]/90 to-[#f3d9a4]/90 dark:from-[#232323]/90 dark:to-[#18181b]/90 border border-[#b89c3a] dark:border-yellow-700 rounded-lg p-3 max-h-[200px] overflow-y-auto">
+                      <div className="grid grid-cols-3 gap-2">
+                        {calledCards.slice(-12).map((card, index) => {
+                          const actualIndex = calledCards.length - 12 + index;
+                          const isLatest = actualIndex === calledCards.length - 1;
+                          return (
+                            <div 
+                              key={`${card}-${actualIndex}`}
+                              className={`px-2 py-1.5 rounded-md text-center font-medium transition-all text-xs ${
+                                isLatest
+                                  ? 'bg-[#e1b866] dark:bg-yellow-800 border border-[#b89c3a] dark:border-yellow-600 text-[#8c2f2b] dark:text-yellow-200 font-bold shadow-sm' 
+                                  : 'bg-white/60 dark:bg-gray-700/60 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600'
+                              }`}
+                            >
+                              {card}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {calledCards.length > 12 && (
+                        <div className="text-center mt-2 text-xs text-gray-500 dark:text-gray-400">
+                          Showing last 12 cards • {calledCards.length} total called
+                        </div>
+                      )}
+                    </div>
+                    {/* Host controls: Pause and Reset Game moved here */}
+                    {isHost && gameStarted && (
+                      <div className="flex flex-col gap-2 mt-4">
+                        <button
+                          className={`flex items-center gap-2 px-5 py-2 rounded-full font-semibold border-2 shadow transition-all duration-200
+                            ${isPaused
+                              ? 'bg-blue-500 hover:bg-blue-600 border-blue-300 text-white'
+                              : 'bg-red-600 hover:bg-red-700 border-yellow-400 text-white'}
+                            hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-300`}
+                          onClick={() => setIsPaused(p => !p)}
+                        >
+                          <span className="text-lg">
+                            {isPaused ? '▶️' : '⏸️'}
+                          </span>
+                          <span className="tracking-wide">
+                            {isPaused ? 'Resume' : 'Pause'}
+                          </span>
+                        </button>
+                        {/* Reset Game button moved below Pause */}
+                        <button
+                          className="flex items-center gap-2 px-5 py-2 rounded-full font-semibold border-2 shadow transition-all duration-200
+                            bg-orange-600 hover:bg-orange-700 border-orange-400 text-white
+                            hover:scale-105 focus:outline-none focus:ring-2 focus:ring-orange-300"
+                          onClick={() => {
+                            if (confirm('Are you sure you want to reset the game for everyone? This will start a new round.')) {
+                              console.log('[CLIENT] Host Reset Game clicked, emitting reset-game event');
+                              const socket = getSocket();
+                              socket.emit("reset-game", { lobbyCode });
+                            }
+                          }}
+                        >
+                          <span className="text-lg">
+                            🔄
+                          </span>
+                          <span className="tracking-wide">
+                            Reset Game
+                          </span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

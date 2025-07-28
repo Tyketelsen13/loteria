@@ -17,8 +17,9 @@ export async function GET(req: Request) {
     }
     return NextResponse.json([lobby]);
   }
-  // Default: return all lobbies (never error)
-  return NextResponse.json(lobbies);
+  // Default: return all lobbies that have at least one player (filter out empty lobbies)
+  const activeLobbies = lobbies.filter(lobby => lobby.players && lobby.players.length > 0);
+  return NextResponse.json(activeLobbies);
 }
 
 // POST: Create or update a lobby (by code)

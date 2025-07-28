@@ -75,7 +75,7 @@ export const authOptions: NextAuthOptions = {
         session.user.name = token.name;
         session.user.image = token.image;
         
-        // Skip database operations during build time
+        // Skip database operations during build time or if MongoDB is unavailable
         if (!skipDB) {
           try {
             // Fetch fresh user data from database to include image
@@ -87,7 +87,8 @@ export const authOptions: NextAuthOptions = {
               session.user.name = user.name;
             }
           } catch (dbError) {
-            console.log('Session callback DB error:', dbError);
+            console.log('Session callback DB error (non-fatal):', dbError);
+            // Continue with existing session data if DB is unavailable
           }
         }
       }
@@ -99,7 +100,7 @@ export const authOptions: NextAuthOptions = {
     error: "/auth/error",
   },
   secret: process.env.NEXTAUTH_SECRET,
-  debug: true, // Enable debug logging
+  debug: process.env.NODE_ENV === "development", // Enable debug logging only in development
 };
 
 // Helper function to get authenticated user from either NextAuth session or JWT token

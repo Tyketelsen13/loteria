@@ -17,11 +17,13 @@ const handle = app.getRequestHandler();
 app.prepare().then(() => {
   // Create HTTP server for Next.js with CORS support
   const server = createServer((req, res) => {
-    // Add CORS headers for all requests
+    // Add CORS headers for all requests - prioritize local development
     const allowedOrigins = [
-      'https://loteria-frontend-ten.vercel.app',
+      'http://localhost:3002',
+      'http://localhost:3003',
       'http://localhost:3000',
       'http://localhost:3001',
+      'https://loteria-frontend-ten.vercel.app',
       'https://loteria-backend-aoiq.onrender.com'
     ];
     
@@ -51,9 +53,11 @@ app.prepare().then(() => {
     path: "/api/socket/io",
     cors: {
       origin: [
-        "https://loteria-frontend-ten.vercel.app",
+        "http://localhost:3002",
+        "http://localhost:3003",
         "http://localhost:3000",
         "http://localhost:3001",
+        "https://loteria-frontend-ten.vercel.app",
         "https://loteria-backend-aoiq.onrender.com"
       ],
       methods: ["GET", "POST"],
@@ -175,7 +179,7 @@ app.prepare().then(() => {
 
       // --- AI Bingo Logic + Tiebreaker ---
       // For each AI player, mark the card if present, then check for bingo
-      let newWinners = [];
+      const newWinners = [];
       Object.keys(game.boards).forEach((player) => {
         if (!player.startsWith('AI ')) return;
         // If tiebreaker is active, only allow activeWinners to play
@@ -491,7 +495,7 @@ app.prepare().then(() => {
   });
 
   // Start the server
-  const port = process.env.PORT || 3001;
+  const port = process.env.PORT || 3003;
   server.listen(port, (err) => {
     if (err) throw err;
     console.log(`> Backend ready on http://localhost:${port}`);

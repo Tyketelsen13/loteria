@@ -157,7 +157,7 @@ app.prepare().then(() => {
 
       // --- AI Bingo Logic + Tiebreaker ---
       // For each AI player, mark the card if present, then check for bingo
-      let newWinners = [];
+      const newWinners = [];
       Object.keys(game.boards).forEach((player) => {
         if (!player.startsWith('AI ')) return;
         // If tiebreaker is active, only allow activeWinners to play
@@ -464,8 +464,10 @@ app.prepare().then(() => {
 
   // Start the server
   const port = process.env.PORT || 3001;
+  const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000';
   server.listen(port, (err) => {
     if (err) throw err;
     console.log(`> Backend ready on http://localhost:${port}`);
+    console.log(`> CORS enabled for: ${CORS_ORIGIN}`);
   });
 });

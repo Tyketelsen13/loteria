@@ -19,13 +19,13 @@ export function getSocket() {
       // In development, use local backend; in production, use deployed backend
       const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
       if (isDevelopment) {
-        baseUrl = 'http://localhost:3001';
+        baseUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3003';
       } else {
-        baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://loteria-backend-aoiq.onrender.com';
+        baseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://loteria-backend-aoiq.onrender.com';
       }
       console.log("[Socket.IO] Connecting to baseUrl:", baseUrl, "isDevelopment:", isDevelopment);
     } else {
-      baseUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3001";
+      baseUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
       console.log("[Socket.IO] Server-side baseUrl:", baseUrl);
     }
     
