@@ -502,18 +502,11 @@ export const deckThemeOptions: DeckThemeOption[] = [
     preview: '/cards/el-corazon.png'
   },
   {
-    id: 'cute-adorable',
-    name: 'Cute & Adorable',
-    description: 'Cute and adorable themed cards with cheerful designs',
-    folder: 'custom-cards/68796740a83d8baf97ca977a',
-    preview: '/custom-cards/68796740a83d8baf97ca977a/large-cute-and-adorable-mexican-loteria-deck-item-1-1752794219242.png'
-  },
-  {
-    id: 'dark-mysterious',
-    name: 'Dark & Mysterious',
-    description: 'Dark and mysterious themed cards with gothic aesthetics',
-    folder: 'custom-cards/68796740a83d8baf97ca977a',
-    preview: '/custom-cards/68796740a83d8baf97ca977a/large-evil-and-dark-themed-objects-item-1-1752790851683.png'
+    id: 'paper-art',
+    name: 'Paper Art',
+    description: 'Handcrafted paper art style cards with vibrant cutout designs',
+    folder: 'custom-cards/paper-art',
+    preview: '/custom-cards/paper-art/el-corazon-paper-art.png'
   },
   {
     id: 'horror',

@@ -546,6 +546,8 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       }).catch((error) => {
         console.warn('[CLIENT] Card preloading failed:', error);
       });
+      // Add the first card to calledCards so the game starts immediately
+      setCalledCards([payload.card]);
       setShowBoard(true);
       console.log('[CLIENT] ✅ Set showBoard to true - should now navigate to game board!');
       console.log('[CLIENT] 🚀 Game started successfully! Players:', Object.keys(payload.boards));
