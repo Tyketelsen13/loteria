@@ -54,12 +54,11 @@ export default function ProfileMenu() {
             height={32}
             className="rounded-full border border-gray-300 dark:border-gray-600 object-cover"
             onError={(e) => {
-              // Fallback to ui-avatars service on image load error
+              // Fallback to local default avatar image on error
               const target = e.target as HTMLImageElement;
-              const userName = user?.name || user?.email || 'Player';
-              const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&size=32&background=b89c3a&color=ffffff&font-size=0.33&format=png`;
-              if (target.src !== fallbackUrl) {
-                console.log('Avatar failed to load, using fallback:', target.src);
+              const fallbackUrl = "/default-avatar.png";
+              if (target.src !== window.location.origin + fallbackUrl && !target.src.endsWith(fallbackUrl)) {
+                console.log('Avatar failed to load, using local fallback:', target.src);
                 target.src = fallbackUrl;
               }
             }}
