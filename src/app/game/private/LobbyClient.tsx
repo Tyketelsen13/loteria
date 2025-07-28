@@ -1080,6 +1080,19 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                                 console.log('[DEBUG] - New card:', next);
                                 console.log('[DEBUG] - Updated list:', updated);
                                 console.log('[DEBUG] - Latest card will be:', updated[updated.length - 1]);
+                                console.log('[DEBUG] - Image name will be:', toImageName(next));
+                                
+                                // Force a re-render by triggering a state change
+                                setTimeout(() => {
+                                  console.log('[DEBUG] 🔄 Checking card display update...');
+                                  const displayElement = document.querySelector('[data-called-card-display]');
+                                  if (displayElement) {
+                                    console.log('[DEBUG] Found display element:', displayElement);
+                                  } else {
+                                    console.log('[DEBUG] ❌ Display element not found!');
+                                  }
+                                }, 100);
+                                
                                 return updated;
                               });
                               
@@ -1432,23 +1445,32 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                     - The card is responsive: half the viewport width, but never larger than 340px or smaller than 180px
                   */}
                   {calledCards.length > 0 ? (
-                    <div className="absolute left-0 right-0 bottom-0 flex justify-center z-20 transition-all duration-500">
+                    <div 
+                      className="absolute left-0 right-0 bottom-0 flex justify-center z-20 transition-all duration-500"
+                      data-called-card-display="true"
+                      data-card-count={calledCards.length}
+                      data-latest-card={calledCards[calledCards.length - 1]}
+                    >
                       <div className="w-[50vw] max-w-[340px] min-w-[180px] aspect-[11/16] flex items-center justify-center">
                         {/* Show the most recently called card (face up) with animation */}
                         <div 
-                          key={`called-card-${calledCards[calledCards.length - 1]}-${calledCards.length}`}
+                          key={`called-card-${calledCards[calledCards.length - 1]}-${calledCards.length}-${Date.now()}`}
                           className="w-full h-full animate-in fade-in-0 zoom-in-95 duration-300"
                         >
                           <LoteriaCard 
-                            name={toImageName(calledCards[calledCards.length - 1])} 
+                            name={calledCards[calledCards.length - 1]} 
                             variant="plain" 
                             className="w-full h-full border-4 border-yellow-400 shadow-2xl" 
                           />
+                          {/* DEBUG: Show what card name we're trying to display */}
+                          <div className="absolute top-0 left-0 bg-red-500 text-white text-xs p-1 z-50">
+                            Original: {calledCards[calledCards.length - 1]} | Count: {calledCards.length}
+                          </div>
                         </div>
                         {/* Card name overlay */}
                         <div className="absolute bottom-2 left-0 right-0 text-center">
                           <div className="inline-block bg-black/80 text-white px-3 py-1 rounded-full text-sm font-bold">
-                            {calledCards[calledCards.length - 1]}
+                            {calledCards[calledCards.length - 1]} (#{calledCards.length})
                           </div>
                         </div>
                       </div>
