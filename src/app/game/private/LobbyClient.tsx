@@ -1025,11 +1025,31 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                       if (!board) return;
                       console.log('[DEBUG] onMark called!', { row, col, player: user.name, lobbyCode });
                       console.log('[DEBUG] Socket connected?', getSocket().connected, 'Socket ID:', getSocket().id);
-                      // Only emit to server, don't update local state immediately
-                      // Wait for server confirmation via "mark-card" event
+                      
+                      // IMMEDIATE LOCAL UPDATE (fallback for broken backend)
+                      setMarks(prev => {
+                        const updated = prev.map(arr => [...arr]);
+                        updated[row][col] = !updated[row][col];
+                        console.log('[DEBUG] ✅ IMMEDIATE local mark update at', row, col, 'to', updated[row][col]);
+                        return updated;
+                      });
+                      
+                      // Also update allMarks for consistency
+                      setAllMarks(prev => {
+                        const updated = { ...prev };
+                        if (!updated[user.name]) {
+                          updated[user.name] = Array(4).fill(null).map(() => Array(4).fill(false));
+                        }
+                        updated[user.name] = updated[user.name].map(arr => [...arr]);
+                        updated[user.name][row][col] = !updated[user.name][row][col];
+                        console.log('[DEBUG] ✅ IMMEDIATE allMarks update for', user.name);
+                        return updated;
+                      });
+                      
+                      // Still try to emit to server (for when it's working)
                       const socket = getSocket();
                       socket.emit("mark-card", { lobbyCode, player: user.name, row, col });
-                      console.log('[DEBUG] Emitted mark-card event to server');
+                      console.log('[DEBUG] Emitted mark-card event to server (fallback mode)');
                     }}
                   />
                 </div>
@@ -1054,10 +1074,19 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                             if (remaining.length > 0) {
                               const next = remaining[Math.floor(Math.random() * remaining.length)];
                               console.log('[DEBUG] Manually calling card:', next);
+                              
+                              // IMMEDIATE LOCAL UPDATE (fallback for broken backend)
+                              setCalledCards(prev => {
+                                const updated = [...prev, next];
+                                console.log('[DEBUG] ✅ IMMEDIATE local called cards update:', updated);
+                                return updated;
+                              });
+                              
+                              // Still try to emit to server (for when it's working)
                               const socket = getSocket();
                               console.log('[DEBUG] Socket connected:', socket.connected, 'Socket ID:', socket.id);
                               socket.emit("call-card", { lobbyCode, card: next });
-                              console.log('[DEBUG] Emitted call-card event with:', { lobbyCode, card: next });
+                              console.log('[DEBUG] Emitted call-card event with:', { lobbyCode, card: next }, '(fallback mode)');
                             } else {
                               console.log('[DEBUG] No remaining cards to call!');
                               alert('No remaining cards to call!');
@@ -1073,7 +1102,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                     {gameStarted && (
                       <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded border">
                         <div className="text-xs text-blue-800 dark:text-blue-200 mb-2">
-                          🎨 Debug: Manual Mark Test (Board: {board.length > 0 ? '✅' : '❌'})
+                          🎨 Debug: Manual Mark Test (Board: {board && board.length > 0 ? '✅' : '❌'})
                         </div>
                         <button
                           className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs transition-colors"
@@ -1081,7 +1110,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                             console.log('[DEBUG] Manual mark test button clicked');
                             console.log('[DEBUG] Socket connected:', getSocket().connected);
                             console.log('[DEBUG] Socket ID:', getSocket().id);
-                            console.log('[DEBUG] Board available:', board.length > 0);
+                            console.log('[DEBUG] Board available:', board && board.length > 0);
                             console.log('[DEBUG] Current board:', board);
                             console.log('[DEBUG] Current marks:', marks);
                             
@@ -1091,7 +1120,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                               player: user.name, 
                               row: 0, 
                               col: 0,
-                              cardAtPosition: board[0]?.[0] || 'unknown'
+                              cardAtPosition: board?.[0]?.[0] || 'unknown'
                             };
                             
                             console.log('[DEBUG] Emitting mark-card with payload:', markPayload);
