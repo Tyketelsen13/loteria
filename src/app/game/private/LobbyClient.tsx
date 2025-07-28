@@ -863,8 +863,10 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
             <div className="font-bold text-yellow-400 mb-1">🔧 DEBUG INFO</div>
             <div>👤 Host: {isHost ? '✅ Yes' : '❌ No'} ({lobbyHost})</div>
             <div>🚀 Started: {gameStarted ? '✅ Yes' : '❌ No'}</div>
-            <div>🎴 Called: {calledCards.length} cards</div>
+            <div>🎴 Called: {calledCards.length} / 54 cards</div>
             <div>📋 Latest: {calledCards.length > 0 ? calledCards[calledCards.length - 1] : '⭕ None'}</div>
+            <div>🎯 Display: {calledCards.length > 0 ? '✅ Showing' : '❌ Hidden'}</div>
+            <div className="text-yellow-300 mt-1">Card Display Test: {calledCards.length > 0 ? `Card #${calledCards.length}` : 'No cards yet'}</div>
           </div>
         )}
         {/* Show lobby only if game has not started */}
@@ -1073,7 +1075,11 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                               // IMMEDIATE LOCAL UPDATE (fallback for broken backend)
                               setCalledCards(prev => {
                                 const updated = [...prev, next];
-                                console.log('[DEBUG] ✅ IMMEDIATE local called cards update:', updated);
+                                console.log('[DEBUG] ✅ IMMEDIATE local called cards update:');
+                                console.log('[DEBUG] - Previous:', prev);
+                                console.log('[DEBUG] - New card:', next);
+                                console.log('[DEBUG] - Updated list:', updated);
+                                console.log('[DEBUG] - Latest card will be:', updated[updated.length - 1]);
                                 return updated;
                               });
                               
@@ -1420,15 +1426,31 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                     </>
                   )}
                   {/*
-                    Called card display:
-                    - If at least one card has been called, show the most recent called card on top of the deck.
-                    - The card is responsive: half the viewport width, but never larger than 340px or smaller than 180px, and keeps card aspect ratio.
+                    Called card display with enhanced animations:
+                    - Shows the most recent called card on top of the deck
+                    - Animates when new cards are called
+                    - The card is responsive: half the viewport width, but never larger than 340px or smaller than 180px
                   */}
                   {calledCards.length > 0 ? (
-                    <div className="absolute left-0 right-0 bottom-0 flex justify-center z-20 transition-all duration-300">
+                    <div className="absolute left-0 right-0 bottom-0 flex justify-center z-20 transition-all duration-500">
                       <div className="w-[50vw] max-w-[340px] min-w-[180px] aspect-[11/16] flex items-center justify-center">
-                        {/* Show the most recently called card (face up) */}
-                        <LoteriaCard key={`${calledCards[calledCards.length - 1]}-${deckTheme}`} name={toImageName(calledCards[calledCards.length - 1])} variant="plain" className="w-full h-full" />
+                        {/* Show the most recently called card (face up) with animation */}
+                        <div 
+                          key={`called-card-${calledCards[calledCards.length - 1]}-${calledCards.length}`}
+                          className="w-full h-full animate-in fade-in-0 zoom-in-95 duration-300"
+                        >
+                          <LoteriaCard 
+                            name={toImageName(calledCards[calledCards.length - 1])} 
+                            variant="plain" 
+                            className="w-full h-full border-4 border-yellow-400 shadow-2xl" 
+                          />
+                        </div>
+                        {/* Card name overlay */}
+                        <div className="absolute bottom-2 left-0 right-0 text-center">
+                          <div className="inline-block bg-black/80 text-white px-3 py-1 rounded-full text-sm font-bold">
+                            {calledCards[calledCards.length - 1]}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ) : (
