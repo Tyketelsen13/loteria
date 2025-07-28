@@ -1,4 +1,5 @@
 // Mapping between traditional card names and custom deck filenames
+// Updated: Paper-art cards now load from correct Cloudinary folder structure
 export interface CardMapping {
   traditional: string;
   horror: string;
@@ -181,9 +182,9 @@ export function getCardImageForDeck(cardName: string, deckThemeId: string): stri
       return `/custom-cards/fantasy-theme/${standardFilename}-fantasy.png`;
     case 'paper-art':
       if (mapping?.paperArt) {
-        return `/custom-cards/paper-art/${mapping.paperArt}`;
+        return `/custom-cards/paper-art-theme/${mapping.paperArt}`;
       }
-      return `/custom-cards/paper-art/${standardFilename}-paper-art.png`;
+      return `/custom-cards/paper-art-theme/${standardFilename}-paper-art.png`;
     case 'traditional':
     default:
       return `/cards/${standardFilename}.png`;
