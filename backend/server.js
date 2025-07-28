@@ -24,9 +24,8 @@ app.prepare().then(() => {
   ];
   const corsOptions = {
     origin: function(origin, callback) {
-      // Allow requests with no origin (like mobile apps, curl, etc.)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin) || origin.includes('loteria-frontend-ten.vercel.app')) {
+      if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
       return callback(new Error('Not allowed by CORS'));
@@ -39,7 +38,7 @@ app.prepare().then(() => {
   // Create HTTP server for Next.js with CORS
   const server = createServer((req, res) => {
     const origin = req.headers.origin;
-    if (origin && (allowedOrigins.includes(origin) || origin.includes('loteria-frontend-ten.vercel.app'))) {
+    if (origin && allowedOrigins.includes(origin)) {
       res.setHeader('Access-Control-Allow-Origin', origin);
       res.setHeader('Access-Control-Allow-Credentials', 'true');
       res.setHeader('Access-Control-Allow-Methods', corsOptions.methods.join(', '));
@@ -62,9 +61,8 @@ app.prepare().then(() => {
     path: "/api/socket/io",
     cors: {
       origin: function(origin, callback) {
-        // Allow requests with no origin (like mobile apps, curl, etc.)
         if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin) || origin.includes('loteria-frontend-ten.vercel.app')) {
+        if (allowedOrigins.includes(origin)) {
           return callback(null, true);
         }
         return callback(new Error('Not allowed by CORS'));
