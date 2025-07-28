@@ -373,7 +373,8 @@ app.prepare().then(() => {
           currentPlayer: turnOrder[0],
           card: deck[0],
         });
-        io.to(lobbyCode).emit("called-cards", []); // Reset called cards for all clients
+        // Emit the first card as called so clients can mark their board
+        io.to(lobbyCode).emit("called-cards", [deck[0]]);
       }
     });
 
