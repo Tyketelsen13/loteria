@@ -68,21 +68,16 @@ import { useSettings } from "@/context/SettingsContext";
 import { getBoardEdgeStyle } from "@/lib/boardBackgrounds";
 import { useIOSDetection, useIOSViewport, useIOSTouch } from "@/hooks/useIOSDetection";
 import { cardPreloader } from "@/lib/cardPreloader";
+import { getAllCardNames, generateRandomBoard } from "@/lib/completeDeck";
 
-// Helper to fetch all card names from /api/cards and generate a random 4x4 board
+// Helper to fetch all card names - now uses complete 54-card deck
 async function fetchCardNames(deckTheme?: string): Promise<string[]> {
-  const res = await fetch(`/api/cards${deckTheme ? `?deckTheme=${deckTheme}` : ''}`);
-  if (!res.ok) return [];
-  return res.json();
+  // Always return the complete 54-card deck
+  return getAllCardNames();
 }
 function generateBoardFrom(cardNames: string[]): string[][] {
-  const shuffled = [...cardNames].sort(() => Math.random() - 0.5);
-  return [
-    shuffled.slice(0, 4),
-    shuffled.slice(4, 8),
-    shuffled.slice(8, 12),
-    shuffled.slice(12, 16),
-  ];
+  // Use the optimized random board generator
+  return generateRandomBoard();
 }
 
 // Main React component for the multiplayer lobby and game

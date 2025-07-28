@@ -67,8 +67,23 @@ app.prepare().then(() => {
 
     // --- Lobby Join/Leave Logic ---
     // Player joins a lobby
-    socket.on("join-lobby", (lobbyCode, user) => {
+    socket.on("join-lobby", (payload) => {
+      console.log('[SERVER] join-lobby received:', payload);
+      
+      // Handle both old format (lobbyCode, user) and new format ({ lobbyCode, playerName })
+      let lobbyCode, userName;
+      if (typeof payload === 'object' && payload.lobbyCode) {
+        lobbyCode = payload.lobbyCode;
+        userName = payload.playerName || payload.user?.name || 'Unknown';
+      } else {
+        // Fallback for old format
+        lobbyCode = arguments[0];
+        userName = arguments[1]?.name || arguments[1] || 'Unknown';
+      }
+      
+      console.log('[SERVER] Joining lobby:', lobbyCode, 'user:', userName);
       socket.join(lobbyCode);
+      
       // Initialize lobby if it doesn't exist
       if (!lobbyGames[lobbyCode]) {
         lobbyGames[lobbyCode] = {
@@ -81,14 +96,24 @@ app.prepare().then(() => {
           winner: null,
           players: [],
         };
+        console.log('[SERVER] Created new lobby:', lobbyCode);
       }
+      
       // Add player to lobby if not already present
       if (!lobbyGames[lobbyCode].players.some((p) => p.id === socket.id)) {
-        lobbyGames[lobbyCode].players.push({ id: socket.id, name: user });
+        lobbyGames[lobbyCode].players.push({ id: socket.id, name: userName });
+        console.log('[SERVER] Added player to lobby:', userName);
       }
+      
       // Notify all clients in the lobby
       io.to(lobbyCode).emit("player-list", lobbyGames[lobbyCode].players);
-      io.to(lobbyCode).emit("player-joined", user);
+      io.to(lobbyCode).emit("player-joined", userName);
+      io.to(lobbyCode).emit("lobby-update", {
+        players: lobbyGames[lobbyCode].players,
+        gameState: lobbyGames[lobbyCode]
+      });
+      
+      console.log('[SERVER] Lobby', lobbyCode, 'now has', lobbyGames[lobbyCode].players.length, 'players');
     });
 
     // Player leaves a lobby
@@ -268,17 +293,18 @@ app.prepare().then(() => {
       // Find the lobby code from the socket's rooms
       const lobbyCode = Array.from(socket.rooms).find((r) => r !== socket.id);
       if (lobbyCode && payload && payload.boards) {
-        // Read all card image names from /public/cards
-        const cardsDir = path.join(process.cwd(), "public", "cards");
-        const files = fs.readdirSync(cardsDir);
-        const cardNames = files
-          .filter((f) => f.endsWith(".png") || f.endsWith(".jpg"))
-          .map((f) =>
-            f
-              .replace(/\.(png|jpg)$/, "")
-              .replace(/-/g, " ")
-              .replace(/\b\w/g, (l) => l.toUpperCase())
-          );
+        // Use complete 54-card traditional Lotería deck
+        const cardNames = [
+          "El Gallo", "El Diablito", "La Dama", "El Catrín", "El Paraguas", "La Sirena", "La Escalera", "La Botella", "El Barril", "El Árbol",
+          "El Melón", "El Valiente", "El Gorrito", "La Muerte", "La Pera", "La Bandera", "El Bandolón", "El Violoncello", "La Garza", "El Pájaro",
+          "La Mano", "La Bota", "La Luna", "El Cotorro", "El Borracho", "El Negrito", "El Corazón", "La Sandía", "El Tambor", "El Camarón",
+          "Las Jaras", "La Rosa", "La Estrella", "La Campana", "El Cantarito", "El Venado", "El Sol", "La Corona", "La Chalupa", "El Pino",
+          "El Pescado", "La Palma", "La Maceta", "El Arpa", "La Rana", "La Araña", "El Soldado", "La Calavera", "El Apache", "El Nopal",
+          "El Alacrán", "El Mundo", "El Músico", "El Cazo"
+        ];
+        
+        console.log('[SERVER] ✅ Using complete 54-card deck for game start');
+        
         // Shuffle deck and assign boards
         const deck = [...cardNames].sort(() => Math.random() - 0.5);
         const playerNames = Object.keys(payload.boards);
