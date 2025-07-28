@@ -45,7 +45,7 @@ app.prepare().then(() => {
 
   // Attach Socket.IO to the same HTTP server
   const io = new Server(server, {
-    path: "/api/socket/io",
+    path: "/socket.io", // Use standard socket.io path for better compatibility
     cors: {
       origin: '*',
       methods: ["GET", "POST"],

@@ -1,6 +1,7 @@
 // Socket.IO client singleton for the browser
 // Ensures only one connection is used throughout the app for real-time multiplayer
 // Handles connection, reconnection, and error events for debugging
+// Updated: Fixed socket path for production compatibility
 import io from "socket.io-client";
 
 let socket: ReturnType<typeof io> | null = null;
@@ -29,17 +30,24 @@ export function getSocket() {
       console.log("[Socket.IO] Server-side baseUrl:", baseUrl);
     }
     
+    console.log("[Socket.IO] Creating socket with config:", {
+      baseUrl,
+      path: "/socket.io",
+      transports: ["polling", "websocket"],
+      isDevelopment: isBrowser ? (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') : false
+    });
+    
     // Cross-origin configuration for Vercel + Render
     socket = io(baseUrl, {
-      path: "/api/socket/io", // Fixed to match backend path in production
+      path: "/socket.io", // Use standard socket.io path for better compatibility
       transports: ["polling", "websocket"], // Try polling first, then websocket for better compatibility
       upgrade: true, // Allow transport upgrades
       autoConnect: true,
-      timeout: 20000, // Reduced timeout
+      timeout: 30000, // Increased timeout for slower connections
       forceNew: false,
       reconnection: true,
-      reconnectionDelay: 2000, // Increased delay to avoid rapid reconnects
-      reconnectionAttempts: 5, // Increased attempts for better reliability
+      reconnectionDelay: 3000, // Increased delay for production
+      reconnectionAttempts: 10, // More attempts for production
       randomizationFactor: 0.5, // Add randomization to reconnection delay
     });
     // Debug connection events
