@@ -694,8 +694,8 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       console.log('[CLIENT] 🔌 Socket connected:', socket.connected);
       console.log('[CLIENT] 🆔 Socket ID:', socket.id);
       
-      socket.emit("start-game", { lobbyCode });
-      console.log('[CLIENT] ✅ Start game event emitted successfully with lobbyCode:', lobbyCode);
+      socket.emit("start-game", { lobbyCode, boards });
+      console.log('[CLIENT] ✅ Start game event emitted successfully with lobbyCode and boards:', lobbyCode, boards);
     } else {
       console.error('[CLIENT] Failed to connect socket, cannot start game');
       return;
