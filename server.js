@@ -26,29 +26,20 @@ app.prepare().then(() => {
       'https://loteria-backend-aoiq.onrender.com'
     ];
     const origin = req.headers.origin;
-    let allowOrigin = '';
+    let allowOrigin = '*';
     if (origin && allowedOrigins.includes(origin)) {
       allowOrigin = origin;
-    } else if (origin) {
-      // Log and fallback for unknown origins
-      console.warn(`[CORS] Blocked or unknown origin: ${origin}`);
-    }
-    // Always log CORS decisions
-    if (allowOrigin) {
-      res.setHeader('Access-Control-Allow-Origin', allowOrigin);
       console.log(`[CORS] Allowed origin: ${allowOrigin}`);
+    } else if (origin) {
+      console.warn(`[CORS] Blocked or unknown origin: ${origin} (using '*')`);
     }
+    res.setHeader('Access-Control-Allow-Origin', allowOrigin);
     res.setHeader('Vary', 'Origin');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
-    // For preflight, always allow (for debugging, fallback to *)
     if (req.method === 'OPTIONS') {
-      if (!allowOrigin) {
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        console.log('[CORS] OPTIONS fallback: allowed all origins (*)');
-      }
       res.writeHead(200);
       res.end();
       return;
@@ -61,18 +52,9 @@ app.prepare().then(() => {
   const io = new Server(server, {
     path: "/socket.io",
     cors: {
-      origin: [
-        "http://localhost:3002",
-        "http://localhost:3003",
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "https://loteria-frontend-ten.vercel.app",
-        "https://loteria-backend-aoiq.onrender.com"
-      ],
       methods: ["GET", "POST"],
       credentials: true,
       allowEIO3: true,
-      // Add a function for dynamic origin logging
       origin: function (origin, callback) {
         const allowed = [
           "http://localhost:3002",
@@ -86,8 +68,8 @@ app.prepare().then(() => {
           console.log(`[Socket.IO CORS] Allowed origin: ${origin}`);
           callback(null, true);
         } else {
-          console.warn(`[Socket.IO CORS] Blocked origin: ${origin}`);
-          callback(new Error('Not allowed by CORS'));
+          console.warn(`[Socket.IO CORS] Blocked origin: ${origin} (using '*')`);
+          callback(null, true); // fallback to allow all for debugging
         }
       }
     },
