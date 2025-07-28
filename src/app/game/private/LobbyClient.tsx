@@ -390,7 +390,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       console.log('[CLIENT] Socket disconnected in called-cards effect');
     });
     
-    socket.on("connect_error", (error) => {
+    socket.on("connect_error", (error: any) => {
       console.error('[CLIENT] Socket connection error in called-cards effect:', error);
     });
     // Listen for mark-card events for all players
@@ -579,14 +579,13 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       console.log('[CLIENT] 📋 Initialized marks for players:', Object.keys(initialMarks));
       
       setGameStarted(true);
-      // Use the card names from the server (they're in the boards)
-      const allCards = Object.values(payload.boards).flat(2);
-      const unique = Array.from(new Set(allCards)) as string[];
-      setCardNames(unique);
-      console.log('[CLIENT] 🎴 Card names set:', unique.length, 'unique cards');
+      // Use the complete 54-card deck for calling cards (not just cards from boards)
+      const fullDeck = getAllCardNames();
+      setCardNames(fullDeck);
+      console.log('[CLIENT] 🎴 Card names set to complete deck:', fullDeck.length, 'cards - Complete 54-card deck:', fullDeck.length === 54 ? '✅' : '❌');
       
       // Preload all card images to prevent white flashes
-      cardPreloader.preloadCards(unique, deckTheme).then(() => {
+      cardPreloader.preloadCards(fullDeck, deckTheme).then(() => {
         console.log('[CLIENT] Card preloading complete');
       }).catch((error) => {
         console.warn('[CLIENT] Card preloading failed:', error);
@@ -833,40 +832,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
     prevCalledCardsLen.current = calledCards.length;
   }, [calledCards]);
 
-  // Automatic card calling - starts when game begins and host
-  useEffect(() => {
-    if (!isHost || !gameStarted || winner || isPaused) return;
 
-    const callNextCard = () => {
-      const remaining = cardNames.filter(c => !calledCards.includes(c));
-      
-      if (remaining.length > 0) {
-        const next = remaining[Math.floor(Math.random() * remaining.length)];
-        console.log('[AUTO] Automatically calling card:', next, 'with interval:', intervalSec, 'seconds');
-        
-        // IMMEDIATE LOCAL UPDATE (fallback for broken backend)
-        setCalledCards(prev => {
-          const updated = [...prev, next];
-          console.log('[AUTO] ✅ Auto called cards update:', updated.length);
-          return updated;
-        });
-        
-        // Still try to emit to server (for when it's working)
-        const socket = getSocket();
-        if (socket.connected) {
-          socket.emit("call-card", { lobbyCode, card: next });
-        }
-      } else {
-        console.log('[AUTO] All cards have been called! Game complete.');
-      }
-    };
-
-    // Start calling cards automatically using the interval slider value
-    const interval = setInterval(callNextCard, intervalSec * 1000);
-
-    // Clean up interval when component unmounts or game ends
-    return () => clearInterval(interval);
-  }, [isHost, gameStarted, winner, isPaused, lobbyCode, cardNames, calledCards, intervalSec]);
 
   // Automatic win detection - check for wins whenever marks or called cards change
   useEffect(() => {
