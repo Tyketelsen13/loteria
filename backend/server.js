@@ -17,19 +17,9 @@ const handle = app.getRequestHandler();
 // Prepare Next.js and start the custom server
 app.prepare().then(() => {
   // CORS configuration for API requests
-  const allowedOrigins = [
-    'https://loteria-frontend-ten.vercel.app',
-    'http://localhost:3000',
-    'http://localhost:3001',
-  ];
+  // Allow all origins for debugging (not recommended for production)
   const corsOptions = {
-    origin: function(origin, callback) {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(new Error('Not allowed by CORS'));
-    },
+    origin: '*',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie', 'next-auth.csrf-token', 'next-auth.callback-url', 'next-auth.session-token'],
@@ -37,13 +27,10 @@ app.prepare().then(() => {
 
   // Create HTTP server for Next.js with CORS
   const server = createServer((req, res) => {
-    const origin = req.headers.origin;
-    if (origin && allowedOrigins.includes(origin)) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
-      res.setHeader('Access-Control-Allow-Methods', corsOptions.methods.join(', '));
-      res.setHeader('Access-Control-Allow-Headers', corsOptions.allowedHeaders.join(', '));
-    }
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', corsOptions.methods.join(', '));
+    res.setHeader('Access-Control-Allow-Headers', corsOptions.allowedHeaders.join(', '));
 
     // Handle preflight requests
     if (req.method === 'OPTIONS') {
@@ -60,13 +47,7 @@ app.prepare().then(() => {
   const io = new Server(server, {
     path: "/api/socket/io",
     cors: {
-      origin: function(origin, callback) {
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) {
-          return callback(null, true);
-        }
-        return callback(new Error('Not allowed by CORS'));
-      },
+      origin: '*',
       methods: ["GET", "POST"],
       credentials: true,
     },
