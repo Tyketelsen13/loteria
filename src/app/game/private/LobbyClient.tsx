@@ -527,47 +527,28 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       setChat((prev) => [...prev, msg]);
     });
     
-    // Listen for game-started event from server
-    socket.on("game-started", (payload: { players: any[], settings: any, lobbyCode: string, gameStarted: boolean }) => {
-      console.log('[CLIENT] 🎮 Received game-started event!');
+    // Listen for start-game event from server (match backend emit)
+    socket.on("start-game", (payload: { boards: any, turnOrder: any, deck: any, turn: number, called: any, currentPlayer: any, card: any }) => {
+      console.log('[CLIENT] 🎮 Received start-game event!');
       console.log('[CLIENT] 📋 Payload:', payload);
-      console.log('[CLIENT] 🔍 Current showBoard state:', showBoard);
-      console.log('[CLIENT] 🔍 Current gameStarted state:', gameStarted);
-      
-      // Extract boards from players data
-      const boards: { [name: string]: string[][] } = {};
-      payload.players.forEach(player => {
-        if (player.board && player.board.length > 0) {
-          boards[player.name] = player.board;
-        }
-      });
-      
-      console.log('[CLIENT] 📊 Extracted boards:', Object.keys(boards));
-      console.log('[CLIENT] 👤 User name:', user.name);
-      console.log('[CLIENT] 🎯 User board found:', !!boards[user.name]);
-      
-      setAllBoards(boards);
-      setBoard(boards[user.name]);
+      // Set up boards and state for the game
+      setAllBoards(payload.boards);
+      setBoard(payload.boards[user.name]);
       setMarks(Array(4).fill(null).map(() => Array(4).fill(false)));
       setGameStarted(true);
-      
-      console.log('[CLIENT] ✅ Set gameStarted to true');
-      
       // Use the card names from the server (they're in the boards)
-      const allCards = Object.values(boards).flat(2);
-      const unique = Array.from(new Set(allCards));
+      const allCards = Object.values(payload.boards).flat(2);
+      const unique = Array.from(new Set(allCards)) as string[];
       setCardNames(unique);
-      
       // Preload all card images to prevent white flashes
       cardPreloader.preloadCards(unique, deckTheme).then(() => {
         console.log('[CLIENT] Card preloading complete');
       }).catch((error) => {
         console.warn('[CLIENT] Card preloading failed:', error);
       });
-      
       setShowBoard(true);
       console.log('[CLIENT] ✅ Set showBoard to true - should now navigate to game board!');
-      console.log('[CLIENT] 🚀 Game started successfully! Players:', Object.keys(boards));
+      console.log('[CLIENT] 🚀 Game started successfully! Players:', Object.keys(payload.boards));
     });
 
     // Listen for error events from server
