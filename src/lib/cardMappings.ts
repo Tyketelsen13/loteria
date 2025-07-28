@@ -153,9 +153,9 @@ export function getCardImageForDeck(cardName: string, deckThemeId: string): stri
         break;
       case 'paper-art':
         if (mapping?.paperArt) {
-          finalUrl = `${baseUrl}/paper-art/${mapping.paperArt.replace('.png', '')}.png`;
+          finalUrl = `${baseUrl}/paper-art-theme/${mapping.paperArt.replace('.png', '')}.png`;
         } else {
-          finalUrl = `${baseUrl}/paper-art/${standardFilename}-paper-art.png`;
+          finalUrl = `${baseUrl}/paper-art-theme/${standardFilename}-paper-art.png`;
         }
         break;
       case 'traditional':

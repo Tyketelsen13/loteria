@@ -13,8 +13,8 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const localDir = path.join(__dirname, '../public/custom-cards/paper-art');
-const cloudinaryFolder = 'paper-art';
+const localDir = path.join(__dirname, '../public/custom-cards/paper-art-theme');
+const cloudinaryFolder = 'paper-art-theme';
 
 async function uploadAll() {
   const files = fs.readdirSync(localDir).filter(f => f.endsWith('.png'));
@@ -23,8 +23,8 @@ async function uploadAll() {
     const publicId = `${cloudinaryFolder}/${file}`.replace(/\\/g, '/').replace(/\.png$/, '');
     try {
       const result = await cloudinary.uploader.upload(localPath, {
-        folder: cloudinaryFolder,
-        public_id: file.replace(/\.png$/, ''),
+        folder: 'loteria-cards',
+        public_id: `${cloudinaryFolder}/${file.replace(/\.png$/, '')}`,
         overwrite: true,
         resource_type: 'image',
       });
