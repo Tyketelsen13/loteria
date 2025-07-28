@@ -83,17 +83,21 @@ const nextConfig: NextConfig = {
 
   // Headers for CORS - but only for proxied routes
   async headers() {
+    const isProd = process.env.NODE_ENV === 'production';
+    const frontendOrigin = isProd
+      ? 'https://loteria-frontend-ten.vercel.app'
+      : 'http://localhost:3002';
     return [
       {
         source: '/api/(socket|lobbies|cards|users|profile)/:path*',
         headers: [
-          { key: 'Access-Control-Allow-Origin', value: 'http://localhost:3002' },
+          { key: 'Access-Control-Allow-Origin', value: frontendOrigin },
           { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
           { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization, Cookie, next-auth.csrf-token, next-auth.callback-url, next-auth.session-token' },
           { key: 'Access-Control-Allow-Credentials', value: 'true' },
         ],
       },
-    ]
+    ];
   },
 
   // Webpack configuration
