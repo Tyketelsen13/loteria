@@ -1097,8 +1097,29 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                             console.log('[DEBUG] Emitting mark-card with payload:', markPayload);
                             socket.emit("mark-card", markPayload);
                             
+                            // Set a timeout to check if server responds
+                            let responseReceived = false;
+                            const responseCheck = setTimeout(() => {
+                              if (!responseReceived) {
+                                console.error('[DEBUG] ❌ No response from server after 3 seconds!');
+                                alert('❌ Server not responding to mark events!');
+                              }
+                            }, 3000);
+                            
+                            // Listen for the response (one-time)
+                            const responseHandler = (data: any) => {
+                              if (data.player === user.name && data.row === 0 && data.col === 0) {
+                                responseReceived = true;
+                                clearTimeout(responseCheck);
+                                console.log('[DEBUG] ✅ Server responded to mark!', data);
+                                alert('✅ Server responded to mark!');
+                                socket.off('mark-card', responseHandler);
+                              }
+                            };
+                            socket.on('mark-card', responseHandler);
+                            
                             // Also try to mark locally to see if UI responds
-                            if (board.length > 0) {
+                            if (board && board.length > 0) {
                               console.log('[DEBUG] Also attempting local mark toggle');
                               const newMarks = marks.map((row, i) => 
                                 row.map((cell, j) => (i === 0 && j === 0) ? !cell : cell)
@@ -1108,7 +1129,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                             }
                           }}
                         >
-                          🎯 Test Mark (0,0) - {board[0]?.[0] || 'No card'}
+                          🎯 Test Mark (0,0) - {board?.[0]?.[0] || 'No card'}
                         </button>
                       </div>
                     )}
@@ -1125,14 +1146,14 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
                           const socket = getSocket();
                           console.log('[SOCKET TEST] Socket connected:', socket.connected);
                           console.log('[SOCKET TEST] Socket ID:', socket.id);
-                          console.log('[SOCKET TEST] Socket transport:', socket.io.engine?.transport?.name);
+                          console.log('[SOCKET TEST] Socket transport:', (socket as any).io?.engine?.transport?.name);
                           
                           // Test basic emission
                           socket.emit('ping', { test: 'manual-test', timestamp: Date.now() });
                           console.log('[SOCKET TEST] Emitted ping event');
                           
                           // Add a one-time listener for pong
-                          socket.once('pong', (data) => {
+                          socket.once('pong', (data: any) => {
                             console.log('[SOCKET TEST] Received pong:', data);
                             alert('✅ Socket test successful! Check console for details.');
                           });
