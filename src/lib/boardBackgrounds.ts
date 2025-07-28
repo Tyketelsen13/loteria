@@ -532,6 +532,8 @@ export const getDeckThemePreviewUrl = (themeId: string): string => {
   // Only apply Cloudinary transformation on client-side in production
   if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
     switch (themeId) {
+      case 'paper-art':
+        return 'https://res.cloudinary.com/deessrmbv/image/upload/paper-art/el-corazon-paper-art.png';
       case 'cute-adorable':
         return 'https://res.cloudinary.com/deessrmbv/image/upload/68796740a83d8baf97ca977a/large-cute-and-adorable-mexican-loteria-deck-item-1-1752794219242.png';
       case 'dark-mysterious':

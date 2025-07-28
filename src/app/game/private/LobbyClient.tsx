@@ -714,11 +714,11 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       return;
     }
 
-    // Ensure socket is connected
+    // Ensure socket is connected (async/await style)
     if (!socket.connected) {
       console.log('[CLIENT] Socket not connected, connecting...');
       socket.connect();
-      // Wait a moment for connection to establish
+      // Wait for connection to establish or timeout
       await new Promise(resolve => {
         if (socket.connected) {
           resolve(true);
@@ -728,15 +728,15 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
         }
       });
     }
-    
+
     if (socket.connected) {
       console.log('[CLIENT] 🚀 Creating new lobby as host');
       console.log('[CLIENT] 👤 User name:', user.name);
       console.log('[CLIENT]  Socket connected:', socket.connected);
       console.log('[CLIENT] 🆔 Socket ID:', socket.id);
-      
-      socket.emit("create-lobby", { 
-        playerName: user.name, 
+
+      socket.emit("create-lobby", {
+        playerName: user.name,
         playerEmail: `${user.name}@loteria.game` // Create a default email
       });
       console.log('[CLIENT] ✅ Create lobby event emitted successfully');
