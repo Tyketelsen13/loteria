@@ -32,7 +32,7 @@ export function getSocket() {
     // Cross-origin configuration for Vercel + Render
     socket = io(baseUrl, {
       path: "/socket.io", // Updated to match backend path
-      transports: ["polling", "websocket"], // Try polling first, then websocket
+      transports: ["websocket"], // Try polling first, then websocket
       upgrade: true, // Allow transport upgrades
       autoConnect: true,
       timeout: 20000, // Reduced timeout
