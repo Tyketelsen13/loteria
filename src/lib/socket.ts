@@ -14,7 +14,7 @@ export function getSocket() {
   if (!socket) {
     // Detect if running in the browser
     const isBrowser = typeof window !== "undefined";
-    let baseUrl = "";
+    let baseUrl = "https://loteria-backend-aoiq.onrender.com";
     if (isBrowser) {
       // In development, use local backend; in production, use deployed backend
       const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
