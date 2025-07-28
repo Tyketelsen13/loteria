@@ -32,14 +32,14 @@ export function getSocket() {
     // Cross-origin configuration for Vercel + Render
     socket = io(baseUrl, {
       path: "/socket.io", // Updated to match backend path
-      transports: ["websocket"], // Try polling first, then websocket
+      transports: ["polling", "websocket"], // Try polling first, then websocket for better compatibility
       upgrade: true, // Allow transport upgrades
       autoConnect: true,
       timeout: 20000, // Reduced timeout
       forceNew: false,
       reconnection: true,
       reconnectionDelay: 2000, // Increased delay to avoid rapid reconnects
-      reconnectionAttempts: 3, // Reduced attempts to avoid endless loops
+      reconnectionAttempts: 5, // Increased attempts for better reliability
       randomizationFactor: 0.5, // Add randomization to reconnection delay
     });
     // Debug connection events

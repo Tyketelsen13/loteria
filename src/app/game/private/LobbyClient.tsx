@@ -374,6 +374,8 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
     socket.on("mark-card", (payload: { player: string; row: number; col: number }) => {
       const { player, row, col } = payload;
       console.log('[DEBUG] Received mark-card event:', payload, 'local user:', user.name);
+      
+      // Update allMarks for all players
       setAllMarks(prev => {
         const updated = { ...prev };
         if (!updated[player]) {
@@ -381,13 +383,16 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
         }
         updated[player] = updated[player].map(arr => [...arr]);
         updated[player][row][col] = !updated[player][row][col];
+        console.log('[DEBUG] Updated allMarks for', player, 'at', row, col, 'to', updated[player][row][col]);
         return updated;
       });
-      // If this is the local user, also update the local marks state for board UI
+      
+      // If this is the local user, also update the local marks state for board UI consistency
       if (player === user.name) {
         setMarks(prev => {
           const updated = prev.map(arr => [...arr]);
           updated[row][col] = !updated[row][col];
+          console.log('[DEBUG] Updated local marks at', row, col, 'to', updated[row][col]);
           return updated;
         });
       }
@@ -421,6 +426,7 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       setShowBoard(false);
       setCalledCards([]);
       setMarks(Array(4).fill(null).map(() => Array(4).fill(false)));
+      setAllMarks({}); // Reset all player marks
       setAllBoards({});
       setBoard(null);
     });
@@ -528,13 +534,22 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
     });
     
     // Listen for start-game event from server (match backend emit)
-    socket.on("start-game", (payload: { boards: any, turnOrder: any, deck: any, turn: number, called: any, currentPlayer: any, card: any }) => {
+    socket.on("start-game", (payload: { boards: any, turnOrder: any, deck: any, turn: number, called: string[], currentPlayer: any, card: any }) => {
       console.log('[CLIENT] 🎮 Received start-game event!');
       console.log('[CLIENT] 📋 Payload:', payload);
       // Set up boards and state for the game
       setAllBoards(payload.boards);
       setBoard(payload.boards[user.name]);
       setMarks(Array(4).fill(null).map(() => Array(4).fill(false)));
+      
+      // Initialize allMarks for all players
+      const initialMarks: { [name: string]: boolean[][] } = {};
+      Object.keys(payload.boards).forEach(playerName => {
+        initialMarks[playerName] = Array(4).fill(null).map(() => Array(4).fill(false));
+      });
+      setAllMarks(initialMarks);
+      console.log('[CLIENT] 📋 Initialized marks for players:', Object.keys(initialMarks));
+      
       setGameStarted(true);
       // Use the card names from the server (they're in the boards)
       const allCards = Object.values(payload.boards).flat(2);
@@ -546,8 +561,9 @@ export default function LobbyClient({ lobbyCode, user }: { lobbyCode: string; us
       }).catch((error) => {
         console.warn('[CLIENT] Card preloading failed:', error);
       });
-      // Add the first card to calledCards so the game starts immediately
-      setCalledCards([payload.card]);
+      // Use the called cards from the server payload (should include first card)
+      setCalledCards(payload.called || []);
+      console.log('[CLIENT] 🃏 Initial called cards:', payload.called);
       setShowBoard(true);
       console.log('[CLIENT] ✅ Set showBoard to true - should now navigate to game board!');
       console.log('[CLIENT] 🚀 Game started successfully! Players:', Object.keys(payload.boards));

@@ -369,10 +369,12 @@ app.prepare().then(() => {
           turnOrder,
           deck,
           turn: 0,
-          called: [],
+          called: [deck[0]], // Initialize with first card already called
           currentPlayer: turnOrder[0],
           card: deck[0],
         });
+        // Store the first card as called in the game state
+        lobbyGames[lobbyCode].called = [deck[0]];
         // Emit the first card as called so clients can mark their board
         io.to(lobbyCode).emit("called-cards", [deck[0]]);
       }
